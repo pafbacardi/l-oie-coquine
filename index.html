@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Jeu de l'Oie Coquin</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💋</text></svg>">
+    <!-- Ligne pour insérer le favicon avec l'emoji 💋 -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💋</text></svg>">
     <style>
         /* Variables CSS pour les couleurs et l'ambiance */
         :root {
@@ -291,9 +292,8 @@
         #dice-container {
             width: 80px; /* Taille du dé */
             height: 80px;
-            background-color: white;
-            border: 2px solid var(--color-primary);
-            border-radius: 10px;
+            background-color: white; /* Default white background for female player */
+            border: 2px solid var(--color-primary); /* Pink border by default for female player */
             position: relative; /* Pour positionner les points */
             display: flex;
             align-items: center;
@@ -301,16 +301,28 @@
             margin-bottom: 10px; /* Espace entre le dé et le bouton */
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             overflow: hidden; /* Pour s'assurer que les points ne débordent pas */
+            transition: background-color 0.3s ease, border-color 0.3s ease; /* Transition pour les couleurs du dé */
+        }
+
+        /* Styles pour le dé quand le joueur masculin joue */
+        #dice-container.blue-theme {
+            background-color: var(--color-blue-primary); /* Blue background for male player */
+            border-color: var(--color-blue-primary); /* Blue border for male player */
         }
 
         .dot {
             position: absolute;
             width: 15px; /* Taille du point */
             height: 15px;
-            background-color: black;
+            background-color: black; /* Default black dots for female player */
             border-radius: 50%;
             opacity: 0; /* Caché par défaut */
-            transition: opacity 0.1s ease; /* Transition douce pour l'apparition/disparition des points */
+            transition: opacity 0.1s ease, background-color 0.3s ease; /* Transition douce pour les points */
+        }
+
+        /* Points blancs pour le dé quand le joueur masculin joue */
+        #dice-container.blue-theme .dot {
+            background-color: white; /* White dots for male player */
         }
 
         /* Positionnement des points */
@@ -511,10 +523,6 @@
             color: var(--color-blue-primary);
         }
 
-        #dice-container.blue-theme {
-            border-color: var(--color-blue-primary);
-        }
-
         #dice-area.blue-theme #roll-dice-button {
             background-color: var(--color-blue-button);
         }
@@ -523,7 +531,7 @@
             background-color: var(--color-blue-button-hover);
         }
 
-        /* Admin Mode Popup */
+        /* Admin Mode Popup (Login) */
         #admin-popup {
             display: none;
             position: fixed;
@@ -599,6 +607,206 @@
             background-color: #388E3C;
         }
 
+        /* Admin Panel (after login) */
+        #admin-panel-content {
+            display: none; /* Hidden by default, shown after login */
+            flex-direction: column;
+            width: 100%;
+            max-width: 600px; /* Max width for larger screens */
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            box-sizing: border-box;
+            max-height: 90vh; /* Limit height for mobile */
+            overflow-y: auto; /* Scrollable list */
+            position: relative;
+        }
+
+        #admin-panel-content h3 {
+            color: var(--color-primary);
+            margin-top: 0;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        #gages-list-container {
+            flex-grow: 1; /* Allows list to take available space */
+            overflow-y: auto; /* Scrollable list */
+            padding-right: 5px; /* For scrollbar */
+        }
+
+        .gage-item {
+            background-color: var(--color-secondary);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            position: relative; /* For action buttons positioning */
+        }
+
+        .gage-item-title {
+            font-weight: bold;
+            color: var(--color-button);
+            font-size: 1.1em;
+        }
+
+        .gage-item-details {
+            font-size: 0.9em;
+            color: var(--color-text);
+        }
+
+        .gage-item-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            justify-content: flex-end; /* Align buttons to the right */
+        }
+
+        .gage-item-actions button {
+            background-color: #6c757d; /* Grey for action buttons */
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .gage-item-actions button.edit-button { background-color: #007bff; }
+        .gage-item-actions button.delete-button { background-color: #dc3545; }
+
+        .gage-item-actions button:hover {
+            opacity: 0.8;
+        }
+
+        #add-gage-button-main {
+            background-color: #28a745; /* Green for add button */
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            margin-top: 20px;
+            width: 100%; /* Full width on mobile */
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        #add-gage-button-main:hover {
+            background-color: #218838;
+        }
+
+        /* Gage Form Popup (for Add/Edit) */
+        #gage-form-popup {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 200; /* Higher z-index than admin popup */
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        #gage-form-popup.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .gage-form-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 15px;
+            max-width: 95%; /* Max width for mobile */
+            width: 500px; /* Max width for larger screens */
+            max-height: 95vh; /* Limit height for mobile */
+            overflow-y: auto; /* Scrollable form */
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+            color: var(--color-text);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        #gage-form-popup.active .gage-form-content {
+            transform: scale(1);
+        }
+
+        .gage-form-content h2 {
+            color: var(--color-button);
+            margin-top: 0;
+            text-align: center;
+            font-size: 1.8em;
+        }
+
+        .gage-form-content label {
+            font-weight: bold;
+            margin-bottom: 5px;
+            display: block; /* Make labels block for better spacing */
+            color: var(--color-primary);
+        }
+
+        .gage-form-content input[type="text"],
+        .gage-form-content input[type="number"],
+        .gage-form-content input[type="url"],
+        .gage-form-content textarea,
+        .gage-form-content select {
+            width: calc(100% - 20px); /* Adjust for padding */
+            padding: 10px;
+            border: 1px solid var(--color-secondary);
+            border-radius: 8px;
+            font-size: 1em;
+            margin-bottom: 10px; /* Space after each input */
+            box-sizing: border-box; /* Include padding in width */
+        }
+
+        .gage-form-content textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        .gage-form-buttons {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+            gap: 10px;
+        }
+
+        .gage-form-buttons button {
+            background-color: var(--color-button);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            flex: 1; /* Distribute space evenly */
+        }
+
+        .gage-form-buttons button.cancel-button {
+            background-color: #6c757d; /* Grey for cancel */
+        }
+        .gage-form-buttons button.cancel-button:hover {
+            background-color: #5a6268;
+        }
+        .gage-form-buttons button.save-button:hover {
+            background-color: var(--color-button-hover);
+        }
+
         /* Custom Message Box */
         #message-box {
             display: none;
@@ -616,6 +824,103 @@
             font-size: 1.2em;
             max-width: 80%;
         }
+
+        /* Confirmation Modal */
+        #confirmation-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000; /* Higher than other popups */
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        #confirmation-modal.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .confirmation-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            max-width: 90%;
+            width: 350px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+            color: var(--color-text);
+        }
+
+        #confirmation-modal.active .confirmation-content {
+            transform: scale(1);
+        }
+
+        .confirmation-content p {
+            font-size: 1.2em;
+            margin-bottom: 25px;
+        }
+
+        .confirmation-buttons {
+            display: flex;
+            justify-content: space-around;
+            gap: 15px;
+        }
+
+        .confirmation-buttons button {
+            background-color: var(--color-button);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            flex: 1;
+        }
+
+        .confirmation-buttons button.cancel-btn {
+            background-color: #6c757d;
+        }
+        .confirmation-buttons button.confirm-btn:hover {
+            background-color: var(--color-button-hover);
+        }
+        .confirmation-buttons button.cancel-btn:hover {
+            background-color: #5a6268;
+        }
+
+        /* New Game Button Styling */
+        #new-game-button {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background-color: #FF5722; /* Orange pour "Nouvelle Partie" */
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 60;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            transition: background-color 0.3s ease;
+        }
+
+        #new-game-button:hover {
+            background-color: #E64A19; /* Orange plus foncé au survol */
+        }
+
     </style>
 </head>
 <body>
@@ -661,6 +966,9 @@
     <!-- Écran de Jeu -->
     <div id="game-screen">
         <div id="current-player-indicator">Au tour de : <span id="current-player-name"></span></div>
+
+        <!-- Bouton Nouvelle Partie -->
+        <button id="new-game-button">Nouvelle Partie</button>
 
         <!-- Bouton pour afficher/masquer les contrôles de débogage -->
         <button id="toggle-debug-button">Débogage</button>
@@ -714,7 +1022,7 @@
         </div>
     </div>
 
-    <!-- Admin Mode Popup -->
+    <!-- Admin Mode Popup (Login) -->
     <div id="admin-popup">
         <div class="admin-content">
             <h2>Mode Administrateur</h2>
@@ -722,64 +1030,119 @@
             <input type="password" id="admin-password-input" placeholder="Mot de passe">
             <button id="admin-login-button">Se connecter</button>
             <button id="admin-close-button">Fermer</button>
-            <div id="admin-panel-content" style="display: none;">
+            <!-- Admin Panel Content (visible après connexion) -->
+            <div id="admin-panel-content">
                 <h3>Gestion des Gages</h3>
-                <p>Ceci est un espace réservé pour l'interface de gestion des gages. Tu pourras ici ajouter, modifier et supprimer les gages.</p>
-                <button id="add-gage-button">Ajouter un Gage</button>
-                <!-- Plus de contrôles ici pour l'édition/suppression -->
+                <div id="gages-list-container">
+                    <!-- Les gages seront affichés ici -->
+                </div>
+                <button id="add-gage-button-main">Ajouter un nouveau Gage</button>
             </div>
+        </div>
+    </div>
+
+    <!-- Gage Form Popup (Add/Edit Gage) -->
+    <div id="gage-form-popup">
+        <div class="gage-form-content">
+            <h2 id="gage-form-title">Ajouter un Gage</h2>
+            <form id="gage-form">
+                <input type="hidden" id="gage-id-input"> <!-- Pour stocker l'ID du gage en modification -->
+
+                <label for="gage-title-input">Titre du Gage :</label>
+                <input type="text" id="gage-title-input" required>
+
+                <label for="gage-text-input">Texte du Gage :</label>
+                <textarea id="gage-text-input" rows="4" required></textarea>
+
+                <label for="gage-category-select">Catégorie :</label>
+                <select id="gage-category-select" required>
+                    <option value="">Sélectionner une catégorie</option>
+                    <option value="action">Action</option>
+                    <option value="undress">Déshabillage</option>
+                    <option value="truth_dare">Vérité ou Ose</option>
+                    <option value="massage_sensory">Massage / Sensoriel</option>
+                    <option value="role_play">Jeu de Rôle</option>
+                    <option value="sexual_positions">Positions Sexuelles</option>
+                    <option value="go_back">Retour en arrière</option>
+                    <option value="surprise">Surprise (même case)</option>
+                    <option value="final_gage">Gage Final</option>
+                    <option value="vestiaire">Vestiaire</option>
+                </select>
+
+                <div id="conditional-fields">
+                    <label for="gage-level-input" id="gage-level-label" style="display: none;">Niveau (1-4) :</label>
+                    <input type="number" id="gage-level-input" min="1" max="4" style="display: none;">
+
+                    <label for="gage-type-select" id="gage-type-label" style="display: none;">Type (Déshabillage) :</label>
+                    <select id="gage-type-select" style="display: none;">
+                        <option value="clothes">Vêtements</option>
+                        <option value="underwear">Sous-vêtements</option>
+                    </select>
+                </div>
+
+                <label for="gage-duration-input">Durée estimée :</label>
+                <input type="text" id="gage-duration-input" placeholder="Ex: 30s, 1min">
+
+                <label for="gage-accessories-input">Accessoires (séparés par des virgules) :</label>
+                <input type="text" id="gage-accessories-input" placeholder="Ex: Plume, Huile de massage">
+
+                <label for="gage-image-url-input">URL de l'image :</label>
+                <input type="url" id="gage-image-url-input" placeholder="https://example.com/image.jpg">
+
+                <div class="gage-form-buttons">
+                    <button type="submit" class="save-button">Sauvegarder</button>
+                    <button type="button" class="cancel-button" id="cancel-gage-form-button">Annuler</button>
+                </div>
+            </form>
         </div>
     </div>
 
     <!-- Custom Message Box -->
     <div id="message-box"></div>
 
+    <!-- Confirmation Modal (New) -->
+    <div id="confirmation-modal">
+        <div class="confirmation-content">
+            <p id="confirmation-message"></p>
+            <div class="confirmation-buttons">
+                <button id="confirm-yes-button" class="confirm-btn">Oui</button>
+                <button id="confirm-no-button" class="cancel-btn">Non</button>
+            </div>
+        </div>
+    </div>
+
     <script type="module">
         // Importe les fonctions nécessaires de Firebase
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // CONFIGURATION FIREBASE
-        // SI TU EXÉCUTES CE FICHIER DIRECTEMENT DANS TON NAVIGATEUR (HORS ENVIRONNEMENT CANVAS),
-        // TU DOIS REMPLACER L'OBJET 'firebaseConfig' CI-DESSOUS PAR LA CONFIGURATION DE TON PROJET FIREBASE.
-        // Tu peux trouver cette configuration dans ta console Firebase (Paramètres du projet > Vos applications > Application Web).
         const firebaseConfig = {
-            apiKey: "AIzaSyDXxfz5VdNiInngWzn3wtKVDJlBBz0272U", // <-- REMPLACE CECI PAR TA CLÉ API FIREBASE
-            authDomain: "jeuoiecoquin.firebaseapp.com", // <-- REMPLACE CECI
-            projectId: "jeuoiecoquin", // <-- REMPLACE CECI
-            storageBucket: "jeuoiecoquin.firebasestorage.app", // <-- REMPLACE CECI
-            messagingSenderId: "642698244266", // <-- REMPLACE CECI
-            appId: "1:642698244266:web:5c7a7e041b6be50bd7a0d3" // <-- REMPLACE CECI
-            // measurementId: "G-XXXXXXXXXX" // Optionnel, si tu utilises Google Analytics
+            apiKey: "AIzaSyDXxfz5VdNiInngWzn3wtKVDJlBBz0272U",
+            authDomain: "jeuoiecoquin.firebaseapp.com",
+            projectId: "jeuoiecoquin",
+            storageBucket: "jeuoiecoquin.firebasestorage.app",
+            messagingSenderId: "642698244266",
+            appId: "1:642698244266:web:5c7a7e041b6be50bd7a0d3"
         };
 
-        // L'ID de l'application est maintenant dérivé du projectId de ta configuration Firebase.
-        // Si tu n'as pas de projectId, il utilisera 'default-app-id'.
         const appId = firebaseConfig.projectId || 'default-app-id';
 
-        // Ajout de logs pour vérifier la configuration Firebase
         console.log("[Firebase Config] Parsed firebaseConfig:", firebaseConfig);
         console.log("[Firebase Config] Using appId:", appId);
 
-
-        // Vérification si la clé API est présente et si l'objet n'est pas vide
         if (!firebaseConfig || Object.keys(firebaseConfig).length === 0 || !firebaseConfig.apiKey || firebaseConfig.apiKey === "VOTRE_API_KEY") {
             console.error("[Firebase Config] Erreur: La configuration Firebase est manquante ou la clé API n'est pas définie. Si tu exécutes ce fichier localement, assure-toi d'avoir remplacé les valeurs par défaut dans 'firebaseConfig'.");
-            // Afficher un message à l'utilisateur si la configuration est critique
             document.addEventListener('DOMContentLoaded', () => {
                 showMessage("Erreur de configuration Firebase: Clé API manquante ou incorrecte. Le jeu ne pourra pas sauvegarder la progression. Si tu es en local, mets à jour 'firebaseConfig' dans le code.");
-                // Désactiver les boutons qui dépendent de Firebase
                 const startGameButton = document.getElementById('start-game-button');
                 const adminModeButton = document.getElementById('admin-mode-button');
                 if (startGameButton) startGameButton.disabled = true;
                 if (adminModeButton) adminModeButton.disabled = true;
             });
-            // Empêcher l'initialisation de Firebase si la config est invalide
-            // throw new Error("Firebase API Key missing."); // Commenté pour ne pas bloquer le rendu si l'utilisateur veut juste voir l'UI
         }
 
-        // Initialise Firebase UNIQUEMENT si la configuration semble valide
         let app;
         let auth;
         let db;
@@ -791,45 +1154,38 @@
             console.warn("[Firebase Init] Firebase ne sera pas initialisé car la configuration est invalide ou manquante. La sauvegarde ne fonctionnera pas.");
         }
 
-
         // Variables globales pour Firebase
-        let userId = null; // Sera défini après l'authentification
-        let gameDocRef = null; // Référence au document Firestore pour la partie en cours
+        let userId = null;
+        let gameDocRef = null;
 
         // Constantes du jeu
-        const totalOriginalCases = 69; // Nombre de cases numérotées (1 à 69)
-        const numVestiaireCases = 2; // Nombre de cases vestiaire ajoutées
-        const startCaseIndex = 0; // Index de la case de départ dans le tableau
-        const finalCaseArrayIndex = totalOriginalCases + numVestiaireCases; // Index de la dernière case du plateau (71)
-        const totalBoardCases = finalCaseArrayIndex + 1; // Nombre total de cases dans le tableau (72, de 0 à 71)
+        const totalOriginalCases = 69;
+        const numVestiaireCases = 2;
+        const startCaseIndex = 0;
+        const finalCaseArrayIndex = totalOriginalCases + numVestiaireCases;
+        const totalBoardCases = finalCaseArrayIndex + 1;
 
-        // Indices des cases Vestiaire (index dans le tableau de cases)
         const vestiaire1Index = 31;
         const vestiaire2Index = 62;
-
-        // Mise à jour de l'indice de début des positions sexuelles (index dans le tableau)
         const sexualPositionsStartCase = 63;
-
 
         // Variables d'état du jeu
         let player1Name = '';
         let player2Name = '';
-        let currentPlayer = 1; // 1 pour le joueur 1 (homme), 2 pour le joueur 2 (femme)
-        let player1Position = startCaseIndex; // Position actuelle du joueur 1 (index de la case, 0-71)
-        let player2Position = startCaseIndex; // Position actuelle du joueur 2 (index de la case, 0-71)
+        let currentPlayer = 1;
+        let player1Position = startCaseIndex;
+        let player2Position = startCaseIndex;
         let player1Clothes = 0;
         let player1Underwear = 0;
         let player2Clothes = 0;
         let player2Underwear = 0;
 
-        let gameReady = false; // Indique si le jeu est initialisé
-        let isMoving = false; // Empêche de relancer le dé pendant le déplacement du pion
+        let gameReady = false;
+        let isMoving = false;
 
-        // Emojis par défaut (peuvent être modifiés par l'utilisateur)
         let selectedMaleEmoji = '🎩';
         let selectedFemaleEmoji = '💋';
 
-        // Tableaux pour stocker les index des cases spéciales aléatoires
         let goBackCases = [];
         let undressCases = [];
         let actionCases = [];
@@ -837,12 +1193,12 @@
         let massageSensoryCases = [];
         let rolePlayCases = [];
 
-        // Variables pour la résolution des promesses des pop-ups
         let resolveGagPromise = null;
         let resolveVictoryPromise = null;
+        let resolveConfirmationPromise = null; // Nouvelle variable pour la promesse de confirmation
 
         // --- Données de Gages (chargées depuis Firestore) ---
-        // Ces variables seront remplies par la fonction loadGagesFromFirestore
+        let allGagesData = {}; // Objet pour stocker tous les gages par catégorie, avec ID unique
         let goBackGagesData = [];
         let surpriseGagesData = [];
         let actionGagesData = [];
@@ -852,8 +1208,7 @@
         let rolePlayGagesData = [];
         let sexualPositionsGagesData = [];
         let finalGageData = [];
-        let vestiaireGagesData = {}; // Objet pour les gages de vestiaire
-
+        let vestiaireGagesData = {};
 
         // Références aux éléments DOM
         const startScreen = document.getElementById('start-screen');
@@ -879,34 +1234,57 @@
         const gagDoneButton = document.getElementById('gag-done-button');
         const currentPlayerNameDisplay = document.getElementById('current-player-name');
         const loadingIndicator = document.getElementById('loading-indicator');
-        const diceArea = document.getElementById('dice-area'); // Référence correcte pour diceArea
+        const diceArea = document.getElementById('dice-area');
 
-        // Debug controls references
         const toggleDebugButton = document.getElementById('toggle-debug-button');
         const debugControls = document.getElementById('debug-controls');
         const targetSquareInput = document.getElementById('target-square-input');
         const manualMoveButton = document.getElementById('manual-move-button');
 
-        // Victory Pop-up references
         const victoryPopup = document.getElementById('victory-popup');
         const victoryTitle = document.getElementById('victory-title');
         const victoryMessage = document.getElementById('victory-message');
         const restartGameButton = document.getElementById('restart-game-button');
         const endSessionButton = document.getElementById('end-session-button');
 
-        // Admin Mode references
         const adminModeButton = document.getElementById('admin-mode-button');
         const adminPopup = document.getElementById('admin-popup');
         const adminPasswordInput = document.getElementById('admin-password-input');
         const adminLoginButton = document.getElementById('admin-login-button');
         const adminCloseButton = document.getElementById('admin-close-button');
         const adminPanelContent = document.getElementById('admin-panel-content');
-        const addGageButton = document.getElementById('add-gage-button'); // Placeholder for future use
+        const addGageButtonMain = document.getElementById('add-gage-button-main');
+        const gagesListContainer = document.getElementById('gages-list-container');
 
-        // Custom Message Box reference
+        const gageFormPopup = document.getElementById('gage-form-popup');
+        const gageFormTitle = document.getElementById('gage-form-title');
+        const gageForm = document.getElementById('gage-form');
+        const gageIdInput = document.getElementById('gage-id-input');
+        const gageTitleInput = document.getElementById('gage-title-input');
+        const gageTextInput = document.getElementById('gage-text-input');
+        const gageCategorySelect = document.getElementById('gage-category-select');
+        const gageLevelLabel = document.getElementById('gage-level-label');
+        const gageLevelInput = document.getElementById('gage-level-input');
+        const gageTypeLabel = document.getElementById('gage-type-label');
+        const gageTypeSelect = document.getElementById('gage-type-select');
+        const gageDurationInput = document.getElementById('gage-duration-input');
+        const gageAccessoriesInput = document.getElementById('gage-accessories-input');
+        const gageImageUrlInput = document.getElementById('gage-image-url-input');
+        const cancelGageFormButton = document.getElementById('cancel-gage-form-button');
+        const conditionalFields = document.getElementById('conditional-fields');
+
         const messageBox = document.getElementById('message-box');
 
-        // Références aux points du dé
+        // Nouvelles références pour la modale de confirmation
+        const confirmationModal = document.getElementById('confirmation-modal');
+        const confirmationMessage = document.getElementById('confirmation-message');
+        const confirmYesButton = document.getElementById('confirm-yes-button');
+        const confirmNoButton = document.getElementById('confirm-no-button');
+
+        // Nouveau bouton "Nouvelle Partie"
+        const newGameButton = document.getElementById('new-game-button');
+
+
         const diceDots = {
             'top-left': document.querySelector('#dice-container .top-left'),
             'top-right': document.querySelector('#dice-container .top-right'),
@@ -918,12 +1296,19 @@
         };
 
 
-        // Listes d'emojis disponibles
         const maleEmojis = ['🎩', '🤵', '🔥', '🕺', '💪', '👑'];
         const femaleEmojis = ['💋', '👠', '💃', '❤️', '💅', '👸'];
 
 
         // --- Fonctions utilitaires ---
+
+        /**
+         * Génère un ID unique simple.
+         * @returns {string} Un ID unique.
+         */
+        function generateUniqueId() {
+            return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+        }
 
         /**
          * Affiche un message personnalisé dans une boîte temporaire.
@@ -940,6 +1325,39 @@
         }
 
         /**
+         * Affiche une modale de confirmation personnalisée.
+         * @param {string} message - Le message à afficher dans la modale.
+         * @returns {Promise<boolean>} Une promesse qui se résout à true si l'utilisateur confirme, false sinon.
+         */
+        function showConfirmation(message) {
+            return new Promise(resolve => {
+                confirmationMessage.textContent = message;
+                confirmationModal.style.display = 'flex';
+                setTimeout(() => confirmationModal.classList.add('active'), 10);
+
+                // Gère les clics sur les boutons de la modale
+                const handleConfirm = () => {
+                    confirmationModal.classList.remove('active');
+                    setTimeout(() => confirmationModal.style.display = 'none', 300);
+                    confirmYesButton.removeEventListener('click', handleConfirm);
+                    confirmNoButton.removeEventListener('click', handleCancel);
+                    resolve(true);
+                };
+
+                const handleCancel = () => {
+                    confirmationModal.classList.remove('active');
+                    setTimeout(() => confirmationModal.style.display = 'none', 300);
+                    confirmYesButton.removeEventListener('click', handleConfirm);
+                    confirmNoButton.removeEventListener('click', handleCancel);
+                    resolve(false);
+                };
+
+                confirmYesButton.addEventListener('click', handleConfirm);
+                confirmNoButton.addEventListener('click', handleCancel);
+            });
+        }
+
+        /**
          * Initialise les options d'emojis pour un joueur donné.
          * @param {HTMLElement} container - Le conteneur DOM pour les options d'emojis.
          * @param {Array<string>} emojis - La liste des emojis à afficher.
@@ -951,26 +1369,23 @@
                 console.error(`[initializeEmojiOptions] Erreur: Conteneur d'emojis non trouvé pour ${playerType}.`);
                 return;
             }
-            container.innerHTML = ''; // Nettoie les options existantes
+            container.innerHTML = '';
             emojis.forEach(emoji => {
                 const emojiDiv = document.createElement('div');
                 emojiDiv.classList.add('emoji-option');
                 emojiDiv.textContent = emoji;
-                emojiDiv.dataset.emoji = emoji; // Stocke l'emoji dans un attribut de données
+                emojiDiv.dataset.emoji = emoji;
 
-                // Sélectionne l'emoji par défaut
                 if ((playerType === 'male' && emoji === selectedMaleEmoji) ||
                     (playerType === 'female' && emoji === selectedFemaleEmoji)) {
                     emojiDiv.classList.add('selected');
                 }
 
                 emojiDiv.addEventListener('click', () => {
-                    // Désélectionne l'ancien emoji
                     const currentSelected = container.querySelector('.emoji-option.selected');
                     if (currentSelected) {
                         currentSelected.classList.remove('selected');
                     }
-                    // Sélectionne le nouvel emoji
                     emojiDiv.classList.add('selected');
                     if (playerType === 'male') {
                         selectedMaleEmoji = emoji;
@@ -999,7 +1414,7 @@
                 const randomIndex = Math.floor(Math.random() * availableIndices.length);
                 const caseIndex = availableIndices[randomIndex];
                 selectedIndices.push(caseIndex);
-                availableIndices.splice(randomIndex, 1); // Supprime pour assurer l'unicité
+                availableIndices.splice(randomIndex, 1);
             }
         }
 
@@ -1010,19 +1425,17 @@
          * @returns {number} Le numéro de case visuel (1-69) ou 0 pour la case de départ, ou un float pour les vestiaires.
          */
         function getVisualCaseNumber(arrayIndex) {
-            if (arrayIndex === startCaseIndex) return 0; // Case de départ
-            if (arrayIndex === vestiaire1Index) return 30.5; // Vestiaire 1 (entre 30 et 31)
-            if (arrayIndex === vestiaire2Index) return 60.5; // Vestiaire 2 (entre 60 et 61)
+            if (arrayIndex === startCaseIndex) return 0;
+            if (arrayIndex === vestiaire1Index) return 30.5;
+            if (arrayIndex === vestiaire2Index) return 60.5;
 
-            // Pour les cases numérotées
             let visualNumber = arrayIndex;
             if (arrayIndex > vestiaire2Index) {
-                visualNumber -= numVestiaireCases; // Décalage pour les deux vestiaires
+                visualNumber -= numVestiaireCases;
             } else if (arrayIndex > vestiaire1Index) {
-                visualNumber -= 1; // Décalage pour le premier vestiaire
+                visualNumber -= 1;
             }
-            // Décalage pour la case de départ (index 0)
-            visualNumber -= 0; // La case 1 est à l'index 1, donc pas de -1 ici si on considère le 0 comme départ
+            visualNumber -= 0;
 
             return visualNumber;
         }
@@ -1033,13 +1446,11 @@
          */
         function createBoard() {
             console.log("[createBoard] Création du plateau de jeu...");
-            gameBoardContainer.innerHTML = ''; // Nettoie le plateau existant avant de le recréer
+            gameBoardContainer.innerHTML = '';
 
-            // Ajout des pions directement au conteneur du plateau
             gameBoardContainer.appendChild(player1Token);
             gameBoardContainer.appendChild(player2Token);
 
-            // Réinitialise les tableaux de cases spéciales
             goBackCases = [];
             undressCases = [];
             actionCases = [];
@@ -1047,26 +1458,16 @@
             massageSensoryCases = [];
             rolePlayCases = [];
 
-            // Définition des plages de cases par niveau pour l'assignation des cases spéciales
-            // Les startIdx/endIdx sont les INDEX réels du tableau de cases.
-            // Les 'level' sont basés sur le NUMÉRO VISUEL de la case.
             const levelRangesForRandomAssignment = [
-                // Niveau 1: Cases 1-15 (indices 1-15)
                 { startIdx: 1, endIdx: 15, level: 1, goBack: 1, undress: 2, action: 3, truthDare: 5, massage: 4, rolePlay: 0 },
-                // Niveau 2: Cases 16-30 (indices 16-30)
                 { startIdx: 16, endIdx: 30, level: 2, goBack: 1, undress: 2, action: 3, truthDare: 4, massage: 3, rolePlay: 2 },
-                // Niveau 3: Cases 31-45 (indices 32-46, car vestiaire1Index est à 31)
                 { startIdx: 32, endIdx: 46, level: 3, goBack: 1, undress: 2, action: 3, truthDare: 3, massage: 3, rolePlay: 3 },
-                // Niveau 4: Cases 46-60 (indices 47-61, car vestiaire1Index et vestiaire2Index sont avant)
                 { startIdx: 47, endIdx: 61, level: 4, goBack: 1, undress: 2, action: 3, truthDare: 3, massage: 3, rolePlay: 3 }
             ];
 
-            // Assignation des cases spéciales aléatoirement dans les plages définies
             levelRangesForRandomAssignment.forEach(range => {
                 let currentAvailable = [];
                 for (let i = range.startIdx; i <= range.endIdx; i++) {
-                    // Exclut les indices des vestiaires des cases disponibles pour les autres types de gages
-                    // (Bien que les ranges soient déjà définis pour les exclure, c'est une sécurité)
                     if (i !== vestiaire1Index && i !== vestiaire2Index && i !== startCaseIndex && i !== finalCaseArrayIndex) {
                         currentAvailable.push(i);
                     }
@@ -1080,39 +1481,36 @@
             });
 
 
-            // Construction du plateau case par case
-            let currentNumberedCaseCount = 0; // Compteur pour les numéros de cases visuels
+            let currentNumberedCaseCount = 0;
             for (let i = 0; i < totalBoardCases; i++) {
                 const caseDiv = document.createElement('div');
                 caseDiv.classList.add('case');
-                caseDiv.dataset.caseIndex = i; // Stocke l'indice réel de la case (0 à 71)
+                caseDiv.dataset.caseIndex = i;
 
                 if (i === startCaseIndex) {
                     caseDiv.classList.add('start-case');
                     caseDiv.textContent = "Départ";
                 } else if (i === vestiaire1Index) {
                     caseDiv.classList.add('vestiaire-case');
-                    addEmojiToCase(caseDiv, '💃', 'vestiaire-icon'); // Icône pour le vestiaire vêtements (Danseuse)
+                    addEmojiToCase(caseDiv, '💃', 'vestiaire-icon');
                     const textSpan = document.createElement('span');
                     textSpan.textContent = "Vestiaire";
                     caseDiv.appendChild(textSpan);
                 } else if (i === vestiaire2Index) {
                     caseDiv.classList.add('vestiaire-case');
-                    addEmojiToCase(caseDiv, '😉', 'vestiaire-icon'); // Icône pour le vestiaire sous-vêtements (Clin d'œil)
+                    addEmojiToCase(caseDiv, '😉', 'vestiaire-icon');
                     const textSpan = document.createElement('span');
                     textSpan.textContent = "Vestiaire";
                     caseDiv.appendChild(textSpan);
                 } else if (i === finalCaseArrayIndex) {
-                    caseDiv.textContent = "Arrivée"; // Dernière case
-                    caseDiv.classList.add('level-5'); // La case d'arrivée est toujours de niveau 5
+                    caseDiv.textContent = "Arrivée 🏁"; // Ajout du drapeau à damier
+                    caseDiv.classList.add('level-5');
                 }
                 else {
-                    // Cas normaux numérotés
                     currentNumberedCaseCount++;
                     caseDiv.textContent = currentNumberedCaseCount;
 
-                    // Attribution des classes de niveau pour le style visuel
-                    const visualCaseNum = currentNumberedCaseCount; // Utilise le compteur pour le niveau
+                    const visualCaseNum = currentNumberedCaseCount;
                     if (visualCaseNum >= 1 && visualCaseNum <= 15) {
                         caseDiv.classList.add('level-1');
                     } else if (visualCaseNum >= 16 && visualCaseNum <= 30) {
@@ -1121,13 +1519,12 @@
                         caseDiv.classList.add('level-3');
                     } else if (visualCaseNum >= 46 && visualCaseNum <= 60) {
                         caseDiv.classList.add('level-4');
-                    } else if (visualCaseNum >= 61 && visualCaseNum <= 69) { // Cases de positions sexuelles
+                    } else if (visualCaseNum >= 61 && visualCaseNum <= 69) {
                         caseDiv.classList.add('level-5');
                         caseDiv.classList.add('sexual-position-case');
                         addEmojiToCase(caseDiv, '🔥', 'sexual-position-emoji');
                     }
 
-                    // Ajoute les classes et emojis pour les autres cases spéciales
                     if (goBackCases.includes(i)) {
                         caseDiv.classList.add('go-back-case');
                         addEmojiToCase(caseDiv, '↩️', 'go-back-emoji');
@@ -1155,10 +1552,9 @@
                 }
                 gameBoardContainer.appendChild(caseDiv);
             }
-            // Positionne les pions sur la case de départ après la création du plateau
             updatePlayerTokenPositions(player1Token, player1Position);
             updatePlayerTokenPositions(player2Token, player2Position);
-            scrollBoardToPlayers(); // Centre la vue sur le départ
+            scrollBoardToPlayers();
             console.log("[createBoard] Plateau de jeu créé.");
         }
 
@@ -1183,13 +1579,10 @@
         function updatePlayerTokenPositions(tokenElement, position) {
             const caseElement = document.querySelector(`.case[data-case-index="${position}"]`);
             if (caseElement) {
-                // Calcule la position 'left' du pion par rapport au conteneur du plateau
-                // Centre le pion sur la case
                 tokenElement.style.left = `${caseElement.offsetLeft + (caseElement.offsetWidth / 2) - (tokenElement.offsetWidth / 2)}px`;
             }
 
-            // Gère le décalage si les deux pions sont sur la même case
-            if (player1Position === player2Position && player1Position !== startCaseIndex) { // Ne décale pas sur la case Départ
+            if (player1Position === player2Position && player1Position !== startCaseIndex) {
                 player1Token.classList.add('on-same-case');
                 player2Token.classList.add('on-same-case');
             } else {
@@ -1206,12 +1599,11 @@
             const caseElement = document.querySelector(`.case[data-case-index="${currentPositionIndex}"]`);
 
             if (caseElement) {
-                // Calcule la position de défilement pour centrer la case actuelle
                 const targetScrollLeft = caseElement.offsetLeft - (gameBoardContainer.offsetWidth / 2) + (caseElement.offsetWidth / 2);
 
                 gameBoardContainer.scrollTo({
                     left: targetScrollLeft,
-                    behavior: 'smooth' // Défilement fluide
+                    behavior: 'smooth'
                 });
             }
         }
@@ -1226,27 +1618,24 @@
         function animatePlayerMovement(tokenElement, startPos, endPos) {
             return new Promise(resolve => {
                 let currentPos = startPos;
-                const stepDuration = 200; // Durée de l'animation pour chaque case
+                const stepDuration = 200;
 
                 const moveStep = () => {
                     if (currentPos === endPos) {
-                        resolve(); // Résout la promesse
+                        resolve();
                         return;
                     }
 
-                    // Détermine la direction du mouvement
                     const direction = (endPos > currentPos) ? 1 : -1;
                     currentPos += direction;
 
-                    // Met à jour la position visuelle du pion
                     updatePlayerTokenPositions(tokenElement, currentPos);
-                    scrollBoardToPlayers(); // Fait défiler le plateau pour suivre le pion
+                    scrollBoardToPlayers();
 
-                    // Appelle la prochaine étape après un délai
                     setTimeout(moveStep, stepDuration);
                 };
 
-                moveStep(); // Démarre l'animation
+                moveStep();
             });
         }
 
@@ -1255,12 +1644,10 @@
          * @param {number} number - Le nombre à afficher sur le dé (1-6).
          */
         function displayDiceFace(number) {
-            // Cacher tous les points
             Object.values(diceDots).forEach(dot => {
                 if (dot) dot.style.opacity = '0';
             });
 
-            // Afficher les points pour le nombre donné
             switch (number) {
                 case 1:
                     if (diceDots.center) diceDots.center.style.opacity = '1';
@@ -1314,20 +1701,18 @@
                 if (gage.accessories && gage.accessories.length > 0) {
                     fullText += `<br>Accessoires : ${gage.accessories.join(', ')}`;
                 }
-                gagText.innerHTML = fullText; // Utilise innerHTML pour les balises <br>
+                gagText.innerHTML = fullText;
 
-                // Gère l'image du gage
                 if (gage.imageUrl) {
                     gagImage.src = gage.imageUrl;
-                    gagImage.style.display = 'block'; // Affiche l'image
+                    gagImage.style.display = 'block';
                 } else {
-                    gagImage.style.display = 'none'; // Cache l'image si pas d'URL
+                    gagImage.style.display = 'none';
                 }
 
                 gagPopup.style.display = 'flex';
                 setTimeout(() => gagPopup.classList.add('active'), 10);
 
-                // Stocke la fonction resolve pour qu'elle puisse être appelée par le gestionnaire de clic global
                 resolveGagPromise = resolve;
             });
         }
@@ -1338,10 +1723,10 @@
         function hideGag() {
             gagPopup.classList.remove('active');
             setTimeout(() => gagPopup.style.display = 'none', 300);
-            gagImage.src = ''; // Réinitialise l'image pour le prochain gage
-            if (resolveGagPromise) { // S'assure qu'il y a une promesse en attente
-                resolveGagPromise(); // Résout la promesse
-                resolveGagPromise = null; // Nettoie la référence à la promesse résolue
+            gagImage.src = '';
+            if (resolveGagPromise) {
+                resolveGagPromise();
+                resolveGagPromise = null;
             }
         }
 
@@ -1358,7 +1743,7 @@
                 victoryPopup.style.display = 'flex';
                 setTimeout(() => victoryPopup.classList.add('active'), 10);
 
-                resolveVictoryPromise = resolve; // Stocke la fonction resolve pour la victoire
+                resolveVictoryPromise = resolve;
             });
         }
 
@@ -1381,17 +1766,17 @@
          */
         function updateGameAmbiance(position) {
             let level = 1;
-            const visualPosition = getVisualCaseNumber(position); // Utilise la position visuelle pour le niveau
+            const visualPosition = getVisualCaseNumber(position);
 
-            if (visualPosition >= 61) { // Visual cases 61-69 (sexual positions)
+            if (visualPosition >= 61) {
                 level = 5;
-            } else if (visualPosition >= 46) { // Visual cases 46-60
+            } else if (visualPosition >= 46) {
                 level = 4;
-            } else if (visualPosition >= 31) { // Visual cases 31-45
+            } else if (visualPosition >= 31) {
                 level = 3;
-            } else if (visualPosition >= 16) { // Visual cases 16-30
+            } else if (visualPosition >= 16) {
                 level = 2;
-            } else { // Visual cases 1-15 (and start case 0)
+            } else {
                 level = 1;
             }
             document.body.style.backgroundColor = `var(--color-background-level${level})`;
@@ -1407,7 +1792,6 @@
             let filtered = gageArray;
             if (currentVisualPosition !== -1) {
                 let currentLevel = 1;
-                // Détermine le niveau en fonction de la position visuelle
                 if (currentVisualPosition >= 61) {
                     currentLevel = 5;
                 } else if (currentVisualPosition >= 46) {
@@ -1420,7 +1804,6 @@
                     currentLevel = 1;
                 }
 
-                // Filtre par niveau si le tableau de gages a une propriété 'level'
                 if (gageArray.length > 0 && gageArray[0].hasOwnProperty('level')) {
                     filtered = gageArray.filter(gage => gage.level === currentLevel);
                 }
@@ -1449,7 +1832,6 @@
             let playerClothesCount = currentPlayer === 1 ? player1Clothes : player2Clothes;
             let playerUnderwearCount = currentPlayer === 1 ? player1Underwear : player2Underwear;
 
-            // Détermine la position visuelle pour le filtrage des gages par niveau
             const visualPosition = getVisualCaseNumber(positionArrayIndex);
 
             if (caseType === 'final-gage') {
@@ -1464,20 +1846,15 @@
             } else if (caseType === 'sexual-position') {
                 selectedGage = getRandomGage(sexualPositionsGagesData, visualPosition);
             } else if (caseType === 'undress') {
-                // Les gages de sous-vêtements (type 'underwear') ne sont disponibles qu'à partir du niveau 3.
-                // Le niveau 3 commence à la case visuelle 31.
                 const isUnderwearLevel = visualPosition >= 31;
 
                 if (playerClothesCount > 0) {
                     selectedGage = getRandomGage(undressGagesData.filter(g => g.type === 'clothes'), visualPosition);
-                    // Décrémente le vêtement
                     if (currentPlayer === 1) player1Clothes--; else player2Clothes--;
-                } else if (playerUnderwearCount > 0 && isUnderwearLevel) { // Ne retire les sous-vêtements que si au bon niveau
+                } else if (playerUnderwearCount > 0 && isUnderwearLevel) {
                     selectedGage = getRandomGage(undressGagesData.filter(g => g.type === 'underwear'), visualPosition);
-                    // Décrémente le sous-vêtement
                     if (currentPlayer === 1) player1Underwear--; else player2Underwear--;
                 } else {
-                    // Complètement nu OU pas encore au niveau des sous-vêtements, donne un gage action à la place
                     selectedGage = getRandomGage(actionGagesData, visualPosition);
                 }
             } else if (caseType === 'action') {
@@ -1489,13 +1866,12 @@
             } else if (caseType === 'role-play') {
                 selectedGage = getRandomGage(rolePlayGagesData, visualPosition);
             } else if (caseType === 'surprise') {
-                selectedGage = getRandomGage(surpriseGagesData, visualPosition); // Surprise gages don't have levels, but pass anyway
-            } else { // Fallback, should not happen if all cases are assigned a type
+                selectedGage = getRandomGage(surpriseGagesData, visualPosition);
+            } else {
                 console.warn("Type de case inconnu ou non géré. Retourne un gage par défaut.");
                 selectedGage = { title: "Défi Général !", text: "Un défi inattendu pour vous deux !", duration: "", accessories: [], imageUrl: "" };
             }
 
-            // Remplace les placeholders par les prénoms des joueurs dans le texte final
             let finalGageText = selectedGage.text
                 .replace(/\[joueur\]/g, currentPlayerName)
                 .replace(/\[autreJoueur\]/g, otherPlayerName);
@@ -1513,14 +1889,14 @@
          * Met à jour les classes de thème (bleu ou rose) en fonction du joueur actuel.
          */
         function updateTheme() {
-            if (currentPlayer === 1) { // Joueur 1 (homme)
+            if (currentPlayer === 1) { // Joueur homme (thème bleu)
                 currentPlayerNameDisplay.parentElement.classList.add('blue-theme');
                 diceContainer.classList.add('blue-theme');
-                diceArea.classList.add('blue-theme'); // Ajoute la classe au conteneur du dé et au bouton
-            } else { // Joueur 2 (femme)
+                diceArea.classList.add('blue-theme');
+            } else { // Joueur femme (thème rose/par défaut)
                 currentPlayerNameDisplay.parentElement.classList.remove('blue-theme');
                 diceContainer.classList.remove('blue-theme');
-                diceArea.classList.remove('blue-theme'); // Retire la classe
+                diceArea.classList.remove('blue-theme');
             }
         }
 
@@ -1541,48 +1917,39 @@
                 let oldPosition = currentPlayer === 1 ? player1Position : player2Position;
                 let playerPositionVariable = currentPlayer === 1 ? 'player1Position' : 'player2Position';
 
-                let finalDestination = Math.min(finalCaseArrayIndex, potentialNewPosition); // La case finale théorique après le lancer de dé
+                let finalDestination = Math.min(finalCaseArrayIndex, potentialNewPosition);
 
                 let stopAtVestiaire = null;
-                // Vérifie si le joueur passe ou atterrit sur le Vestiaire 1
                 if (oldPosition < vestiaire1Index && finalDestination >= vestiaire1Index) {
                     stopAtVestiaire = vestiaire1Index;
                 }
-                // Vérifie si le joueur passe ou atterrit sur le Vestiaire 2 (et n'a pas déjà été arrêté au Vestiaire 1)
                 if (oldPosition < vestiaire2Index && finalDestination >= vestiaire2Index && (stopAtVestiaire === null || stopAtVestiaire < vestiaire2Index)) {
                     stopAtVestiaire = vestiaire2Index;
                 }
 
                 if (stopAtVestiaire !== null) {
-                    // Le joueur doit s'arrêter au vestiaire
                     const vestiaireType = stopAtVestiaire === vestiaire1Index ? 'vestiaire-clothes' : 'vestiaire-underwear';
                     const gage = getGage(stopAtVestiaire, vestiaireType);
 
-                    // Déplace le pion jusqu'au vestiaire
                     if (currentPlayer === 1) player1Position = stopAtVestiaire; else player2Position = stopAtVestiaire;
                     await animatePlayerMovement(currentToken, oldPosition, stopAtVestiaire);
                     updateGameAmbiance(Math.max(player1Position, player2Position));
 
-                    // Affiche le gage du vestiaire
                     await showGag(gage);
 
-                    // Le tour se termine ici. Le joueur est maintenant sur la case vestiaire.
-                    // Au prochain tour, il relancera le dé de cette position.
-                    currentPlayer = currentPlayer === 1 ? 2 : 1; // Change de joueur
+                    currentPlayer = currentPlayer === 1 ? 2 : 1;
                     currentPlayerNameDisplay.textContent = currentPlayer === 1 ? player1Name : player2Name;
                     updateTheme();
 
                 } else {
-                    // Pas d'arrêt au vestiaire, le joueur se déplace directement vers la destination finale
                     if (currentPlayer === 1) player1Position = finalDestination; else player2Position = finalDestination;
                     await animatePlayerMovement(currentToken, oldPosition, finalDestination);
                     updateGameAmbiance(Math.max(player1Position, player2Position));
 
-                    let currentLandingPosition = finalDestination; // La position où le joueur a finalement atterri
+                    let currentLandingPosition = finalDestination;
                     let caseTypeAtLanding = 'normal';
                     let stepsReceded = 0;
 
-                    // Détermine le type de case à la position d'atterrissage actuelle
                     if (currentLandingPosition === finalCaseArrayIndex) {
                         caseTypeAtLanding = 'final-gage';
                     } else if (goBackCases.includes(currentLandingPosition)) {
@@ -1602,7 +1969,6 @@
                         caseTypeAtLanding = 'role-play';
                     }
 
-                    // Vérifie si les joueurs sont sur la même case (surprise)
                     if (player1Position === player2Position && player1Position !== startCaseIndex && player1Position !== vestiaire1Index && player1Position !== vestiaire2Index) {
                         caseTypeAtLanding = 'surprise';
                     }
@@ -1610,7 +1976,6 @@
                     let gageToExecute = getGage(currentLandingPosition, caseTypeAtLanding, stepsReceded);
                     await showGag(gageToExecute);
 
-                    // Si c'était une case "Retour en arrière", gère le mouvement de recul et le gage de la nouvelle case
                     if (caseTypeAtLanding === 'go-back') {
                         const recedeFromPosition = currentLandingPosition;
                         const recedeToPosition = Math.max(startCaseIndex, recedeFromPosition - stepsReceded);
@@ -1619,7 +1984,6 @@
                         await animatePlayerMovement(currentToken, recedeFromPosition, recedeToPosition);
                         updateGameAmbiance(Math.max(player1Position, player2Position));
 
-                        // Réévalue le type de case à la position de recul
                         let recededCaseType = 'normal';
                         if (recedeToPosition === finalCaseArrayIndex) {
                             recededCaseType = 'final-gage';
@@ -1641,19 +2005,16 @@
                             recededCaseType = 'role-play';
                         }
 
-                        // Vérifie si les joueurs sont sur la même case (surprise) à la position de recul
                         if (player1Position === player2Position && player1Position !== startCaseIndex && player1Position !== vestiaire1Index && player1Position !== vestiaire2Index) {
                             recededCaseType = 'surprise';
                         }
 
-                        // Affiche un nouveau gage si la case de recul est spéciale (et n'est pas un autre "retour en arrière" pour éviter les boucles)
                         if (recededCaseType !== 'normal' && recededCaseType !== 'go-back') {
                             let recededGage = getGage(recedeToPosition, recededCaseType);
                             await showGag(recededGage);
                         }
                     }
 
-                    // Vérifie la victoire après tous les mouvements et gages
                     if (player1Position === finalCaseArrayIndex) {
                         await showVictoryScreen(player1Name);
                     } else if (player2Position === finalCaseArrayIndex) {
@@ -1663,7 +2024,7 @@
                         currentPlayerNameDisplay.textContent = currentPlayer === 1 ? player1Name : player2Name;
                         updateTheme();
                     }
-                } // Fin du bloc 'else' pour les mouvements sans vestiaire
+                }
             } catch (error) {
                 console.error("Une erreur est survenue pendant le tour du joueur :", error);
             } finally {
@@ -1678,8 +2039,9 @@
          */
         function resetGame() {
             console.log("[resetGame] Réinitialisation du jeu...");
-            player1Position = startCaseIndex; // Réinitialise à la case de départ
-            player2Position = startCaseIndex; // Réinitialise à la case de départ
+            player1Position = startCaseIndex;
+            player2Position = startCaseIndex;
+            // Réinitialise les vêtements/sous-vêtements aux valeurs par défaut des inputs
             player1Clothes = parseInt(player1ClothesInput.value, 10);
             player1Underwear = parseInt(player1UnderwearInput.value, 10);
             player2Clothes = parseInt(player2ClothesInput.value, 10);
@@ -1688,32 +2050,31 @@
             gameReady = false;
             isMoving = false;
 
-            // Masquer les écrans de jeu et de pop-up
+            // Masque tous les écrans de jeu et popups
             gameScreen.style.display = 'none';
             gagPopup.style.display = 'none';
             victoryPopup.style.display = 'none';
             debugControls.style.display = 'none';
-            adminPopup.style.display = 'none'; // Cache aussi la popup admin
+            adminPopup.style.display = 'none';
+            gageFormPopup.style.display = 'none'; // Cache le formulaire de gage aussi
 
-            // Afficher l'écran de démarrage
+            // Affiche l'écran de démarrage
             startScreen.style.display = 'flex';
-            updateGameAmbiance(startCaseIndex); // Réinitialiser l'ambiance à la case de départ
+            updateGameAmbiance(startCaseIndex); // Réinitialise l'ambiance au niveau de départ
 
-            // Réinitialiser les sélections d'emojis
+            // Réinitialise les sélections d'emojis et les affiche
             initializeEmojiOptions(maleEmojiOptionsDiv, maleEmojis, 'male');
             initializeEmojiOptions(femaleEmojiOptionsDiv, femaleEmojis, 'female');
 
-            // Réinitialiser le dé à sa face par défaut
-            displayDiceFace(1);
-            updateTheme(); // S'assurer que le thème est correct au reset (bleu pour le joueur 1 au début)
+            displayDiceFace(1); // Affiche le dé sur 1
+            updateTheme(); // Met à jour le thème pour le joueur 1
             console.log("[resetGame] Jeu réinitialisé.");
         }
 
         /**
-         * Charge les données des gages depuis Firestore.
+         * Charge les données des gages depuis Firestore et met en place un listener en temps réel.
          */
         async function loadGagesFromFirestore() {
-            // Vérifie si Firebase est initialisé avant de tenter d'accéder à db
             if (!db) {
                 console.error("[loadGagesFromFirestore] Firebase Firestore n'est pas initialisé. Impossible de charger les gages.");
                 showMessage("Erreur: Firebase non initialisé. Impossible de charger les gages.");
@@ -1725,80 +2086,71 @@
             loadingIndicator.textContent = "Chargement des gages...";
             loadingIndicator.style.display = 'block';
 
-            try {
-                // Chemin pour les données publiques des gages
-                const gagesCollectionRef = collection(db, `artifacts/${appId}/public/data/gages`);
+            const gagesCollectionRef = collection(db, `artifacts/${appId}/public/data/gages`);
 
-                // Récupère tous les documents de la collection 'gages'
-                const querySnapshot = await getDocs(gagesCollectionRef);
-                console.log("[loadGagesFromFirestore] QuerySnapshot obtenu. Nombre de documents:", querySnapshot.docs.length);
+            // Utilisation de onSnapshot pour des mises à jour en temps réel
+            onSnapshot(gagesCollectionRef, async (querySnapshot) => {
+                console.log("[onSnapshot] Changement détecté dans la collection 'gages'.");
+                let gagesExist = false;
+                allGagesData = {}; // Réinitialise l'objet global
 
-                // Vérifie si les gages sont vides ou incomplets (par exemple, si la catégorie 'action' manque)
-                if (querySnapshot.empty || !querySnapshot.docs.some(doc => doc.id === 'action')) {
+                querySnapshot.forEach(docSnap => {
+                    gagesExist = true;
+                    const categoryId = docSnap.id;
+                    const data = docSnap.data();
+
+                    if (categoryId === 'vestiaire') {
+                        vestiaireGagesData = data;
+                        allGagesData[categoryId] = data; // Stocke l'objet vestiaire directement
+                    } else {
+                        // Assure que chaque gage a un ID unique
+                        const gagesWithIds = (data.gages || []).map(gage => {
+                            if (!gage.id) {
+                                gage.id = generateUniqueId();
+                                console.warn(`[onSnapshot] Gage sans ID trouvé dans la catégorie '${categoryId}'. Un ID unique lui a été assigné.`);
+                                // Optionnel: Mettre à jour Firestore immédiatement pour persister l'ID
+                                // updateDoc(docSnap.ref, { gages: data.gages });
+                            }
+                            return gage;
+                        });
+                        allGagesData[categoryId] = gagesWithIds;
+
+                        // Met à jour les tableaux spécifiques pour la logique de jeu
+                        switch (categoryId) {
+                            case 'go_back': goBackGagesData = gagesWithIds; break;
+                            case 'surprise': surpriseGagesData = gagesWithIds; break;
+                            case 'action': actionGagesData = gagesWithIds; break;
+                            case 'undress': undressGagesData = gagesWithIds; break;
+                            case 'truth_dare': truthOrDareGagesData = gagesWithIds; break;
+                            case 'massage_sensory': massageSensoryGagesData = gagesWithIds; break;
+                            case 'role_play': rolePlayGagesData = gagesWithIds; break;
+                            case 'sexual_positions': sexualPositionsGagesData = gagesWithIds; break;
+                            case 'final_gage': finalGageData = gagesWithIds; break;
+                        }
+                    }
+                });
+
+                if (!gagesExist || !allGagesData['action']) { // Vérifie si au moins 'action' existe
                     console.warn("[loadGagesFromFirestore] Aucune donnée de gages trouvée ou incomplète dans Firestore. Initialisation des données par défaut...");
                     await initializeDefaultGagesInFirestore();
-                    // Après l'initialisation, on les recharge pour s'assurer d'avoir les données fraîches
-                    const reQuerySnapshot = await getDocs(gagesCollectionRef);
-                    reQuerySnapshot.forEach(docSnap => {
-                        const data = docSnap.data();
-                        switch (docSnap.id) {
-                            case 'go_back': goBackGagesData = data.gages || []; break;
-                            case 'surprise': surpriseGagesData = data.gages || []; break;
-                            case 'action': actionGagesData = data.gages || []; break;
-                            case 'undress': undressGagesData = data.gages || []; break;
-                            case 'truth_dare': truthOrDareGagesData = data.gages || []; break;
-                            case 'massage_sensory': massageSensoryGagesData = data.gages || []; break;
-                            case 'role_play': rolePlayGagesData = data.gages || []; break;
-                            case 'sexual_positions': sexualPositionsGagesData = data.gages || []; break;
-                            case 'final_gage': finalGageData = data.gages || []; break;
-                            case 'vestiaire': vestiaireGagesData = data; break; // Vestiaire est un objet, pas un tableau
-                            default: console.warn(`[loadGagesFromFirestore] Catégorie de gage inconnue: ${docSnap.id}`);
-                        }
-                    });
+                    // onSnapshot se déclenchera à nouveau après l'initialisation des défauts
                 } else {
-                    querySnapshot.forEach(docSnap => {
-                        const data = docSnap.data();
-                        switch (docSnap.id) {
-                            case 'go_back': goBackGagesData = data.gages || []; break;
-                            case 'surprise': surpriseGagesData = data.gages || []; break;
-                            case 'action': actionGagesData = data.gages || []; break;
-                            case 'undress': undressGagesData = data.gages || []; break;
-                            case 'truth_dare': truthOrDareGagesData = data.gages || []; break;
-                            case 'massage_sensory': massageSensoryGagesData = data.gages || []; break;
-                            case 'role_play': rolePlayGagesData = data.gages || []; break;
-                            case 'sexual_positions': sexualPositionsGagesData = data.gages || []; break;
-                            case 'final_gage': finalGageData = data.gages || []; break;
-                            case 'vestiaire': vestiaireGagesData = data; break; // Vestiaire est un objet, pas un tableau
-                            default: console.warn(`[loadGagesFromFirestore] Catégorie de gage inconnue: ${docSnap.id}`);
-                        }
-                    });
+                    console.log("[loadGagesFromFirestore] Gages chargés et mis à jour depuis Firestore avec succès !");
+                    renderAdminGagesList(); // Met à jour la liste dans le panneau admin
                 }
-                console.log("[loadGagesFromFirestore] Gages chargés depuis Firestore avec succès !");
-            } catch (error) {
-                console.error("[loadGagesFromFirestore] Erreur lors du chargement des gages depuis Firestore :", error);
-                showMessage("Impossible de charger les gages. Veuillez vérifier votre connexion ou les règles Firebase.");
-                // Fallback to empty arrays if Firestore fails
-                goBackGagesData = [];
-                surpriseGagesData = [];
-                actionGagesData = [];
-                undressGagesData = [];
-                truthOrDareGagesData = [];
-                massageSensoryGagesData = [];
-                rolePlayGagesData = [];
-                sexualPositionsGagesData = [];
-                finalGageData = [];
-                vestiaireGagesData = {};
-            } finally {
                 loadingIndicator.style.display = 'none';
-            }
+            }, (error) => {
+                console.error("[onSnapshot] Erreur lors du chargement des gages depuis Firestore :", error);
+                showMessage("Impossible de charger les gages. Veuillez vérifier votre connexion ou les règles Firebase.");
+                loadingIndicator.style.display = 'none';
+            });
         }
 
         /**
          * Initialise les gages par défaut dans Firestore si les collections sont vides.
-         * Cette fonction est à appeler une seule fois ou quand les gages sont manquants.
+         * Chaque gage aura désormais un ID unique généré.
          */
         async function initializeDefaultGagesInFirestore() {
-            // Vérifie si db est défini avant de l'utiliser
             if (!db) {
                 console.error("[initializeDefaultGagesInFirestore] Firebase Firestore n'est pas initialisé. Impossible d'initialiser les gages par défaut.");
                 return;
@@ -1923,9 +2275,14 @@
             for (const category in defaultGages) {
                 const docRef = doc(gagesCollectionRef, category);
                 if (category === 'vestiaire') {
-                    await setDoc(docRef, defaultGages[category]); // Pour l'objet vestiaire
+                    // Pour le vestiaire, les gages sont des objets directs, pas un tableau 'gages'
+                    // On ajoute des IDs aux sous-objets si nécessaire, mais ce n'est pas le même pattern
+                    // que les autres catégories. Pour l'instant, on ne leur donne pas d'ID unique au niveau des sous-objets.
+                    await setDoc(docRef, defaultGages[category]);
                 } else {
-                    await setDoc(docRef, { gages: defaultGages[category] }); // Pour les tableaux
+                    // Assure que chaque gage par défaut a un ID unique avant de le sauvegarder
+                    const gagesWithIds = defaultGages[category].map(gage => ({ ...gage, id: generateUniqueId() }));
+                    await setDoc(docRef, { gages: gagesWithIds });
                 }
                 console.log(`[initializeDefaultGagesInFirestore] Gages par défaut pour la catégorie '${category}' initialisés.`);
             }
@@ -1933,12 +2290,10 @@
         }
 
 
-        // --- Gestion des événements ---
+        // --- Gestion des événements du jeu ---
 
-        // Écouteur d'événement pour le bouton "Commencer le jeu !"
         startGameButton.addEventListener('click', async () => {
             console.log("[startGameButton] Bouton 'Commencer le jeu !' cliqué.");
-            // Vérifie si Firebase est initialisé avant de continuer
             if (!app || !auth || !db) {
                 showMessage("Le jeu ne peut pas démarrer : Firebase n'est pas correctement configuré. Veuillez vérifier la console pour plus de détails et mettre à jour votre 'firebaseConfig' si tu es en local.");
                 return;
@@ -1953,34 +2308,30 @@
 
 
             if (player1Name && player2Name && !isNaN(player1Clothes) && !isNaN(player1Underwear) && !isNaN(player2Clothes) && !isNaN(player2Underwear)) {
-                // Validation des nombres de vêtements
                 if (player1Clothes < 0 || player1Underwear < 0 || player2Clothes < 0 || player2Underwear < 0) {
                     showMessage("Le nombre de vêtements et sous-vêtements ne peut pas être négatif.");
                     return;
                 }
 
-                // Authentification Firebase
-                loadingIndicator.style.display = 'block'; // Affiche l'indicateur de chargement
-                startGameButton.disabled = true; // Désactive le bouton pendant le chargement
-                adminModeButton.disabled = true; // Désactive le bouton admin aussi
+                loadingIndicator.style.display = 'block';
+                startGameButton.disabled = true;
+                adminModeButton.disabled = true;
 
                 try {
                     console.log("[startGameButton] Tentative d'authentification Firebase...");
-                    // Pour l'exécution locale, on utilise l'authentification anonyme.
                     await signInAnonymously(auth);
 
-                    userId = auth.currentUser.uid; // Récupère l'UID de l'utilisateur
+                    userId = auth.currentUser.uid;
                     console.log("[startGameButton] Authentification Firebase réussie. User ID:", userId);
 
-                    // Définit la référence au document Firestore pour cette partie
                     gameDocRef = doc(db, `artifacts/${appId}/users/${userId}/game_state/current_game`);
                     console.log("[startGameButton] Référence au document de jeu:", gameDocRef.path);
 
-                    // Charge les gages depuis Firestore avant de charger l'état du jeu
-                    await loadGagesFromFirestore();
-                    console.log("[startGameButton] Gages chargés. Tentative de chargement de l'état du jeu...");
+                    // loadGagesFromFirestore est maintenant un onSnapshot, donc il est déjà actif
+                    // On attend juste que les gages soient chargés la première fois
+                    // Pour s'assurer que les gages sont bien là avant de continuer, on peut ajouter une petite attente ou un flag
+                    // Pour l'instant, on considère que onSnapshot a déjà peuplé les données.
 
-                    // Tente de charger l'état du jeu existant
                     const docSnap = await getDoc(gameDocRef);
                     if (docSnap.exists()) {
                         const savedState = docSnap.data();
@@ -1999,7 +2350,6 @@
                         showMessage("Partie précédente chargée !");
                         console.log("[startGameButton] Partie précédente chargée:", savedState);
                     } else {
-                        // Si pas de partie sauvegardée, sauvegarde l'état initial
                         await setDoc(gameDocRef, {
                             player1Name,
                             player2Name,
@@ -2017,37 +2367,32 @@
                         console.log("[startGameButton] Nouvelle partie commencée et sauvegardée.");
                     }
 
-                    // Met à jour les pions avec les emojis sélectionnés
                     player1Token.textContent = selectedMaleEmoji;
                     player2Token.textContent = selectedFemaleEmoji;
-                    // Affiche le nom du premier joueur
                     currentPlayerNameDisplay.textContent = currentPlayer === 1 ? player1Name : player2Name;
 
-                    // Bascule l'affichage de l'écran de démarrage à l'écran de jeu
                     startScreen.style.display = 'none';
                     gameScreen.style.display = 'flex';
-                    gameReady = true; // Le jeu est prêt
-                    createBoard(); // Génère le plateau
-                    updateGameAmbiance(Math.max(player1Position, player2Position)); // Initialise l'ambiance
-                    updateTheme(); // Applique le thème initial
+                    gameReady = true;
+                    createBoard();
+                    updateGameAmbiance(Math.max(player1Position, player2Position));
+                    updateTheme();
                     console.log("[startGameButton] Jeu démarré avec succès.");
 
                 } catch (error) {
                     console.error("[startGameButton] Erreur d'authentification ou de chargement Firebase :", error);
                     showMessage("Erreur de connexion à Firebase. Veuillez réessayer ou vérifier votre configuration.");
-                    startGameButton.disabled = false; // Réactive le bouton en cas d'erreur
+                    startGameButton.disabled = false;
                     adminModeButton.disabled = false;
                 } finally {
-                    loadingIndicator.style.display = 'none'; // Cache l'indicateur de chargement
+                    loadingIndicator.style.display = 'none';
                 }
 
             } else {
-                // Utilise une alerte simple pour les prénoms manquants
                 showMessage("Veuillez saisir les prénoms des deux joueurs, choisir leurs emojis et entrer le nombre de vêtements/sous-vêtements pour commencer.");
             }
         });
 
-        // Fonction pour sauvegarder l'état du jeu dans Firestore
         async function saveGameState() {
             if (!gameDocRef) {
                 console.warn("[saveGameState] gameDocRef n'est pas défini. Impossible de sauvegarder l'état du jeu.");
@@ -2073,51 +2418,40 @@
             }
         }
 
-        // Écouteur d'événement pour le bouton "Lancer le dé !"
         rollDiceButton.addEventListener('click', async () => {
             if (!gameReady || isMoving) return;
 
             let rollCount = 0;
-            const animationDuration = 1000; // Durée de l'animation en ms
-            const intervalTime = 100; // Intervalle entre chaque changement de valeur
+            const animationDuration = 1000;
+            const intervalTime = 100;
 
             const animationInterval = setInterval(() => {
                 const randomValue = Math.floor(Math.random() * 6) + 1;
-                displayDiceFace(randomValue); // Afficher une face aléatoire pendant l'animation
+                displayDiceFace(randomValue);
                 rollCount++;
                 if (rollCount * intervalTime >= animationDuration) {
                     clearInterval(animationInterval);
-                    const diceResult = Math.floor(Math.random() * 6) + 1; // Résultat final du dé
-                    displayDiceFace(diceResult); // Afficher la face finale du dé
+                    const diceResult = Math.floor(Math.random() * 6) + 1;
+                    displayDiceFace(diceResult);
 
-                    // Détermine la nouvelle position du joueur (index du tableau)
                     let currentPlayersPosition = currentPlayer === 1 ? player1Position : player2Position;
                     let potentialNewPosition = currentPlayersPosition + diceResult;
 
-                    // Appelle la fonction générique de gestion de tour
                     handlePlayerTurn(potentialNewPosition);
                 }
             }, intervalTime);
-            // La sauvegarde se fait après le handlePlayerTurn pour s'assurer que toutes les mises à jour sont faites
-            // avant de sauvegarder.
         });
 
-        // Écouteur d'événement UNIQUE pour le bouton "Gage terminé" dans la pop-up
         gagDoneButton.addEventListener('click', async () => {
             hideGag();
-            await saveGameState(); // Sauvegarde l'état après avoir terminé un gage
+            await saveGameState();
         });
 
-        // Écouteur d'événement pour le bouton "Recommencer une nouvelle partie"
         restartGameButton.addEventListener('click', async () => {
             hideVictoryScreen();
             resetGame();
-            // Supprime l'ancienne partie de Firestore si l'utilisateur redémarre
             if (gameDocRef) {
                 try {
-                    // Utilise setDoc avec un objet vide pour effacer le contenu du document
-                    // ou deleteDoc si tu veux supprimer complètement le document.
-                    // setDoc({}, { merge: false }) est plus sûr pour "vider" sans supprimer le document lui-même.
                     await setDoc(gameDocRef, {
                         player1Name: '', player2Name: '',
                         player1Position: startCaseIndex, player2Position: startCaseIndex,
@@ -2131,17 +2465,13 @@
                     console.error("[restartGameButton] Erreur lors de la réinitialisation de l'ancienne partie :", error);
                 }
             }
-            // Pas besoin de saveGameState ici, car resetGame initialise les valeurs et le setDoc ci-dessus les met à zéro.
         });
 
-        // Écouteur d'événement pour le bouton "Terminer la session"
         endSessionButton.addEventListener('click', () => {
             hideVictoryScreen();
             resetGame();
-            // Pas de sauvegarde ici, car la session est terminée
         });
 
-        // Écouteur d'événement pour le bouton "Débogage" (toggle)
         toggleDebugButton.addEventListener('click', () => {
             if (debugControls.style.display === 'flex') {
                 debugControls.style.display = 'none';
@@ -2150,7 +2480,6 @@
             }
         });
 
-        // Écouteur d'événement pour le bouton "Déplacer à la case" (débogage)
         manualMoveButton.addEventListener('click', async () => {
             if (!gameReady || isMoving) return;
 
@@ -2161,35 +2490,33 @@
                 return;
             }
 
-            // Convertit le numéro de case visuel en index de tableau
             let targetArrayIndex = targetVisualSquare;
-            if (targetVisualSquare >= 31) { // Si la case visuelle est 31 ou plus, on a passé le premier vestiaire
+            if (targetVisualSquare >= 31) {
                 targetArrayIndex += 1;
             }
-            if (targetVisualSquare >= 61) { // Si la case visuelle est 61 ou plus, on a passé le deuxième vestiaire
+            if (targetVisualSquare >= 61) {
                 targetArrayIndex += 1;
             }
 
-            // Gère le cas où l'utilisateur entre un numéro de case qui correspondrait à un vestiaire
-            // (Bien que l'input min/max le limite aux cases numérotées, c'est une sécurité)
             if (targetArrayIndex === vestiaire1Index || targetArrayIndex === vestiaire2Index) {
                  showMessage(`La case ${targetVisualSquare} est un vestiaire. Veuillez entrer un numéro de case numérotée.`);
                  return;
             }
 
-            // Appelle la fonction générique de gestion de tour
-            await handlePlayerTurn(targetArrayIndex); // Attendre la fin du tour
-            await saveGameState(); // Sauvegarde l'état après le mouvement manuel
+            await handlePlayerTurn(targetArrayIndex);
+            await saveGameState();
         });
 
         // --- Admin Mode Logic ---
-        const ADMIN_PASSWORD = "admin"; // Mot de passe simple pour le mode admin (À NE PAS UTILISER EN PRODUCTION !)
+        const ADMIN_PASSWORD = "admin";
 
         adminModeButton.addEventListener('click', () => {
             adminPopup.style.display = 'flex';
             setTimeout(() => adminPopup.classList.add('active'), 10);
             adminPanelContent.style.display = 'none'; // Cache le contenu admin par défaut
-            adminPasswordInput.value = ''; // Réinitialise le champ de mot de passe
+            adminPasswordInput.value = '';
+            adminPasswordInput.style.display = 'block'; // S'assurer que le champ de mot de passe est visible
+            adminLoginButton.style.display = 'inline-block'; // S'assurer que le bouton login est visible
         });
 
         adminCloseButton.addEventListener('click', () => {
@@ -2203,28 +2530,261 @@
                 showMessage("Connexion administrateur réussie !");
                 adminPasswordInput.style.display = 'none';
                 adminLoginButton.style.display = 'none';
-                adminPanelContent.style.display = 'block'; // Affiche le panneau admin
+                adminPanelContent.style.display = 'flex'; // Affiche le panneau admin
+                // Pas besoin de recharger les gages, onSnapshot s'en occupe
             } else {
                 showMessage("Mot de passe incorrect.");
                 adminPasswordInput.value = '';
             }
         });
 
-        // Placeholder for future admin functionality
-        addGageButton.addEventListener('click', () => {
-            showMessage("Fonctionnalité d'ajout de gage à implémenter ici !");
+        addGageButtonMain.addEventListener('click', () => {
+            openGageForm(); // Ouvre le formulaire pour un nouvel ajout
         });
 
+        cancelGageFormButton.addEventListener('click', () => {
+            hideGageForm();
+        });
 
-        // Définition des plages de niveaux (doit être après les constantes globales comme vestiaire1Index etc.)
-        // Ces plages sont utilisées pour l'assignation aléatoire des types de cases,
-        // et leurs startIdx/endIdx sont les INDEX RÉELS du tableau de cases.
-        const newLevelRanges = [
-            { startIdx: 1, endIdx: 15, level: 1, goBack: 1, undress: 2, action: 3, truthDare: 5, massage: 4, rolePlay: 0 },
-            { startIdx: 16, endIdx: 30, level: 2, goBack: 1, undress: 2, action: 3, truthDare: 4, massage: 3, rolePlay: 2 },
-            { startIdx: 32, endIdx: 46, level: 3, goBack: 1, undress: 2, action: 3, truthDare: 3, massage: 3, rolePlay: 3 },
-            { startIdx: 47, endIdx: 61, level: 4, goBack: 1, undress: 2, action: 3, truthDare: 3, massage: 3, rolePlay: 3 }
-        ];
+        // Gère la visibilité des champs "Niveau" et "Type" en fonction de la catégorie
+        gageCategorySelect.addEventListener('change', () => {
+            const selectedCategory = gageCategorySelect.value;
+            const needsLevel = ['action', 'undress', 'truth_dare', 'massage_sensory', 'role_play'].includes(selectedCategory);
+            const needsType = selectedCategory === 'undress';
+
+            gageLevelLabel.style.display = needsLevel ? 'block' : 'none';
+            gageLevelInput.style.display = needsLevel ? 'block' : 'none';
+            gageLevelInput.required = needsLevel; // Rendre requis si visible
+
+            gageTypeLabel.style.display = needsType ? 'block' : 'none';
+            gageTypeSelect.style.display = needsType ? 'block' : 'none';
+            gageTypeSelect.required = needsType; // Rendre requis si visible
+        });
+
+        gageForm.addEventListener('submit', async (event) => {
+            event.preventDefault(); // Empêche le rechargement de la page
+
+            const gageId = gageIdInput.value || generateUniqueId();
+            const title = gageTitleInput.value.trim();
+            const text = gageTextInput.value.trim();
+            const category = gageCategorySelect.value;
+            const level = gageLevelInput.style.display === 'block' ? parseInt(gageLevelInput.value, 10) : undefined;
+            const type = gageTypeSelect.style.display === 'block' ? gageTypeSelect.value : undefined;
+            const duration = gageDurationInput.value.trim();
+            const accessories = gageAccessoriesInput.value.trim().split(',').map(a => a.trim()).filter(a => a);
+            const imageUrl = gageImageUrlInput.value.trim();
+
+            if (!title || !text || !category) {
+                showMessage("Veuillez remplir tous les champs obligatoires (Titre, Texte, Catégorie).");
+                return;
+            }
+            // Le niveau 5 est pour les positions sexuelles qui n'ont pas de niveau ajustable via le formulaire
+            // et les gages finaux. Le formulaire ne doit permettre que 1-4 pour les catégories avec niveau.
+            if (level !== undefined && (isNaN(level) || level < 1 || level > 4)) {
+                showMessage("Le niveau doit être un nombre entre 1 et 4 pour cette catégorie.");
+                return;
+            }
+
+            const newGage = { id: gageId, title, text, duration, accessories, imageUrl };
+            if (level !== undefined) newGage.level = level;
+            if (type !== undefined) newGage.type = type;
+
+            try {
+                const categoryDocRef = doc(db, `artifacts/${appId}/public/data/gages/${category}`);
+
+                if (category === 'vestiaire') {
+                    // Pour la catégorie 'vestiaire', la structure est différente
+                    // Ici, on ne peut pas "ajouter" un gage, seulement modifier 'clothes' ou 'underwear'.
+                    // Le formulaire ne gère pas cette distinction pour la modification/ajout simple.
+                    // Donc, on bloque l'ajout/modification de 'vestiaire' via ce formulaire.
+                    showMessage("La modification des gages 'Vestiaire' n'est pas supportée via ce formulaire pour le moment.");
+                    return;
+                }
+
+                // Récupère l'array existant ou un array vide
+                const docSnap = await getDoc(categoryDocRef);
+                let currentGages = docSnap.exists() ? (docSnap.data().gages || []) : [];
+
+                const existingGageIndex = currentGages.findIndex(g => g.id === gageId);
+
+                if (existingGageIndex > -1) {
+                    // Modification d'un gage existant
+                    currentGages[existingGageIndex] = newGage;
+                    await updateDoc(categoryDocRef, { gages: currentGages });
+                    showMessage("Gage modifié avec succès !");
+                } else {
+                    // Ajout d'un nouveau gage
+                    currentGages.push(newGage);
+                    await setDoc(categoryDocRef, { gages: currentGages }, { merge: true }); // setDoc avec merge pour créer si n'existe pas
+                    showMessage("Nouveau gage ajouté avec succès !");
+                }
+                hideGageForm();
+            } catch (error) {
+                console.error("Erreur lors de la sauvegarde du gage :", error);
+                showMessage("Erreur lors de la sauvegarde du gage. " + error.message);
+            }
+        });
+
+        /**
+         * Affiche le formulaire d'ajout/modification de gage.
+         * @param {object|null} gage - L'objet gage à modifier, ou null pour un nouvel ajout.
+         * @param {string|null} category - La catégorie du gage à modifier (nécessaire pour trouver le gage).
+         */
+        function openGageForm(gage = null, category = null) {
+            gageForm.reset(); // Réinitialise le formulaire
+            gageIdInput.value = ''; // Efface l'ID caché
+            gageLevelLabel.style.display = 'none';
+            gageLevelInput.style.display = 'none';
+            gageLevelInput.required = false;
+            gageTypeLabel.style.display = 'none';
+            gageTypeSelect.style.display = 'none';
+            gageTypeSelect.required = false;
+
+            if (gage && category) {
+                gageFormTitle.textContent = "Modifier le Gage";
+                gageIdInput.value = gage.id;
+                gageTitleInput.value = gage.title;
+                gageTextInput.value = gage.text;
+                gageCategorySelect.value = category;
+                gageDurationInput.value = gage.duration || '';
+                gageAccessoriesInput.value = (gage.accessories || []).join(', ');
+                gageImageUrlInput.value = gage.imageUrl || '';
+
+                // Gère les champs conditionnels pour la modification
+                const needsLevel = ['action', 'undress', 'truth_dare', 'massage_sensory', 'role_play'].includes(category);
+                const needsType = category === 'undress';
+
+                if (needsLevel) {
+                    gageLevelLabel.style.display = 'block';
+                    gageLevelInput.style.display = 'block';
+                    gageLevelInput.value = gage.level || '';
+                    gageLevelInput.required = true;
+                }
+                if (needsType) {
+                    gageTypeLabel.style.display = 'block';
+                    gageTypeSelect.style.display = 'block';
+                    gageTypeSelect.value = gage.type || 'clothes';
+                    gageTypeSelect.required = true;
+                }
+
+            } else {
+                gageFormTitle.textContent = "Ajouter un Gage";
+            }
+
+            gageFormPopup.style.display = 'flex';
+            setTimeout(() => gageFormPopup.classList.add('active'), 10);
+        }
+
+        /**
+         * Cache le formulaire d'ajout/modification de gage.
+         */
+        function hideGageForm() {
+            gageFormPopup.classList.remove('active');
+            setTimeout(() => gageFormPopup.style.display = 'none', 300);
+        }
+
+        /**
+         * Supprime un gage de Firestore.
+         * @param {string} gageId - L'ID unique du gage à supprimer.
+         * @param {string} category - La catégorie du gage.
+         */
+        async function deleteGage(gageId, category) {
+            const confirmed = await showConfirmation("Êtes-vous sûr de vouloir supprimer ce gage ? Cette action est irréversible.");
+
+            if (!confirmed) {
+                return;
+            }
+
+            try {
+                const categoryDocRef = doc(db, `artifacts/${appId}/public/data/gages/${category}`);
+                const docSnap = await getDoc(categoryDocRef);
+
+                if (docSnap.exists()) {
+                    let currentGages = docSnap.data().gages || [];
+                    const updatedGages = currentGages.filter(gage => gage.id !== gageId);
+
+                    if (updatedGages.length < currentGages.length) {
+                        await updateDoc(categoryDocRef, { gages: updatedGages });
+                        showMessage("Gage supprimé avec succès !");
+                    } else {
+                        showMessage("Gage non trouvé dans la catégorie.");
+                    }
+                } else {
+                    showMessage("Catégorie de gage non trouvée.");
+                }
+            } catch (error) {
+                console.error("Erreur lors de la suppression du gage :", error);
+                showMessage("Erreur lors de la suppression du gage. " + error.message);
+            }
+        }
+
+        /**
+         * Rend la liste des gages dans le panneau administrateur.
+         * Cette fonction est appelée par le onSnapshot pour les mises à jour en temps réel.
+         */
+        function renderAdminGagesList() {
+            gagesListContainer.innerHTML = ''; // Vide la liste existante
+
+            // Obtient la liste des catégories triées pour un affichage cohérent
+            const sortedCategories = Object.keys(allGagesData).sort();
+
+            sortedCategories.forEach(category => {
+                const gages = allGagesData[category];
+
+                if (category === 'vestiaire') {
+                    // Gère les gages vestiaire séparément car leur structure est différente
+                    const vestiaireGages = [];
+                    if (gages.clothes) vestiaireGages.push({ id: 'vestiaire_clothes', title: gages.clothes.title, text: gages.clothes.text, type: 'clothes' });
+                    if (gages.underwear) vestiaireGages.push({ id: 'vestiaire_underwear', title: gages.underwear.title, text: gages.underwear.text, type: 'underwear' });
+
+                    vestiaireGages.forEach(gage => {
+                        const gageItem = document.createElement('div');
+                        gageItem.classList.add('gage-item');
+                        gageItem.innerHTML = `
+                            <div class="gage-item-title">${gage.title}</div>
+                            <div class="gage-item-details">Catégorie: Vestiaire (${gage.type})</div>
+                            <div class="gage-item-actions">
+                                <button class="edit-button" data-gage-id="${gage.id}" data-gage-category="vestiaire">Modifier</button>
+                                <!-- Pas de suppression pour les gages vestiaire par défaut pour l'instant -->
+                            </div>
+                        `;
+                        gagesListContainer.appendChild(gageItem);
+
+                        // Ajoute les écouteurs d'événements pour les boutons "Modifier"
+                        gageItem.querySelector('.edit-button').addEventListener('click', () => {
+                            // Pour les gages vestiaire, il faut passer l'objet complet
+                            // Note: la modification des gages vestiaire est simplifiée et ne permet pas l'ajout/suppression
+                            // de sous-types via le formulaire actuel, seulement l'édition des champs existants.
+                            const originalGage = (gage.type === 'clothes' ? allGagesData.vestiaire.clothes : allGagesData.vestiaire.underwear);
+                            openGageForm(originalGage, category);
+                        });
+                    });
+                } else if (Array.isArray(gages)) { // S'assure que c'est un tableau de gages
+                    gages.forEach(gage => {
+                        const gageItem = document.createElement('div');
+                        gageItem.classList.add('gage-item');
+                        gageItem.innerHTML = `
+                            <div class="gage-item-title">${gage.title}</div>
+                            <div class="gage-item-details">Catégorie: ${category.replace('_', ' ')} ${gage.level ? `(Niveau: ${gage.level})` : ''}</div>
+                            <div class="gage-item-actions">
+                                <button class="edit-button" data-gage-id="${gage.id}" data-gage-category="${category}">Modifier</button>
+                                <button class="delete-button" data-gage-id="${gage.id}" data-gage-category="${category}">Supprimer</button>
+                            </div>
+                        `;
+                        gagesListContainer.appendChild(gageItem);
+
+                        // Ajoute les écouteurs d'événements pour les boutons
+                        gageItem.querySelector('.edit-button').addEventListener('click', () => {
+                            openGageForm(gage, category);
+                        });
+                        gageItem.querySelector('.delete-button').addEventListener('click', () => {
+                            deleteGage(gage.id, category);
+                        });
+                    });
+                }
+            });
+        }
+
 
         // Initialisation du jeu au chargement complet du DOM
         document.addEventListener('DOMContentLoaded', () => {
@@ -2235,13 +2795,14 @@
                 gagPopup.style.display = 'none';
                 victoryPopup.style.display = 'none';
                 debugControls.style.display = 'none';
-                adminPopup.style.display = 'none'; // S'assurer que la popup admin est cachée au démarrage
+                adminPopup.style.display = 'none';
+                gageFormPopup.style.display = 'none';
+                confirmationModal.style.display = 'none'; // Assurez-vous que la modale de confirmation est cachée
 
                 startGameButton.disabled = false;
-                adminModeButton.disabled = false; // Rendre le bouton admin actif au démarrage
+                adminModeButton.disabled = false;
                 loadingIndicator.style.display = 'none';
 
-                // Vérifier si les éléments existent avant d'appeler initializeEmojiOptions
                 if (maleEmojiOptionsDiv && femaleEmojiOptionsDiv) {
                     initializeEmojiOptions(maleEmojiOptionsDiv, maleEmojis, 'male');
                     initializeEmojiOptions(femaleEmojiOptionsDiv, femaleEmojis, 'female');
@@ -2252,9 +2813,38 @@
                 displayDiceFace(1);
                 updateTheme();
                 console.log("[DOMContentLoaded] Écran de démarrage prêt.");
+
+                // Lance le chargement des gages via onSnapshot dès le début
+                loadGagesFromFirestore();
+
             } catch (e) {
                 console.error("[DOMContentLoaded] Erreur critique lors de l'initialisation du DOM:", e);
                 showMessage("Une erreur est survenue au démarrage. Veuillez recharger la page.");
+            }
+        });
+
+        // --- NOUVEAU : Événement pour le bouton "Nouvelle Partie" ---
+        newGameButton.addEventListener('click', async () => {
+            const confirmed = await showConfirmation("Voulez-vous vraiment commencer une nouvelle partie ? La partie actuelle sera perdue.");
+            if (confirmed) {
+                resetGame();
+                // Optionnel: Réinitialiser l'état de la partie dans Firestore si tu veux effacer la sauvegarde de l'utilisateur
+                if (gameDocRef) {
+                    try {
+                        await setDoc(gameDocRef, {
+                            player1Name: '', player2Name: '',
+                            player1Position: startCaseIndex, player2Position: startCaseIndex,
+                            player1Clothes: 0, player1Underwear: 0,
+                            player2Clothes: 0, player2Underwear: 0,
+                            currentPlayer: 1,
+                            selectedMaleEmoji: '🎩', selectedFemaleEmoji: '💋'
+                        });
+                        console.log("[newGameButton] Ancienne partie réinitialisée dans Firestore.");
+                    } catch (error) {
+                        console.error("[newGameButton] Erreur lors de la réinitialisation de l'ancienne partie dans Firestore :", error);
+                    }
+                }
+                showMessage("Nouvelle partie commencée !");
             }
         });
 
