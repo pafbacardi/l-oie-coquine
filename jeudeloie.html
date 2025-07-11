@@ -1,0 +1,2263 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jeu de l'Oie Coquin</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💋</text></svg>">
+    <style>
+        /* Variables CSS pour les couleurs et l'ambiance */
+        :root {
+            --color-primary: #FF69B4; /* Rose vif */
+            --color-secondary: #FFC0CB; /* Rose pâle */
+            --color-text: #333;
+            --color-background-start: #FCE4EC; /* Très pâle pour le début */
+            --color-background-level1: #FFEBEE; /* Rose léger */
+            --color-background-level2: #FFCDD2; /* Rose moyen */
+            --color-background-level3: #EF9A9A; /* Rose plus soutenu */
+            --color-background-level4: #E57373; /* Rouge-rose intense */
+            --color-background-level5: #8B008B; /* Violet foncé pour le niveau 5 */
+            --color-button: #FF1493; /* Rose profond */
+            --color-button-hover: #C71585; /* Rose plus foncé */
+            --color-debug-bg: rgba(255, 255, 0, 0.9);
+            --color-debug-border: #999;
+
+            /* Couleurs pour le thème bleu (joueur homme) */
+            --color-blue-primary: #007bff; /* Bleu standard */
+            --color-blue-secondary: #6cbfff; /* Bleu clair */
+            --color-blue-button: #0056b3; /* Bleu foncé pour bouton */
+            --color-blue-button-hover: #004085; /* Bleu encore plus foncé */
+        }
+
+        /* Styles généraux pour le corps de la page */
+        html, body {
+            height: 100%; /* Ensure full height for vh units to work correctly */
+            margin: 0;
+            padding: 0;
+            overflow: hidden; /* Empêche le scroll par défaut du body */
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background-color: var(--color-background-start);
+            color: var(--color-text);
+            transition: background-color 0.8s ease-in-out; /* Transition pour le changement de fond */
+        }
+
+        /* --- Écran d'accueil --- */
+        #start-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            text-align: center;
+            max-width: 350px;
+            width: 90%;
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            max-height: 85vh;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        #start-screen h1 {
+            color: var(--color-primary);
+            margin-bottom: 25px;
+            font-size: 2.2em;
+        }
+
+        #start-screen label {
+            margin-top: 15px;
+            font-weight: bold;
+            color: var(--color-primary);
+        }
+
+        #start-screen input[type="text"],
+        #start-screen input[type="number"] { /* Style pour les inputs numériques aussi */
+            padding: 12px;
+            margin-top: 8px;
+            border: 2px solid var(--color-secondary);
+            border-radius: 8px;
+            width: calc(100% - 24px);
+            font-size: 1.1em;
+            text-align: center;
+        }
+
+        /* Styles pour la sélection d'emojis */
+        .emoji-selection {
+            margin-top: 20px;
+            width: 100%;
+        }
+
+        .emoji-options {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .emoji-option {
+            font-size: 2.5em;
+            cursor: pointer;
+            padding: 4px;
+            border: 2px solid transparent;
+            border-radius: 8px;
+            transition: border-color 0.2s ease, background-color 0.2s ease;
+        }
+
+        .emoji-option:hover {
+            background-color: var(--color-secondary);
+        }
+
+        .emoji-option.selected {
+            border-color: var(--color-button);
+            background-color: var(--color-secondary);
+        }
+
+        #start-screen button {
+            background-color: var(--color-button);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 1.3em;
+            font-weight: bold;
+            margin-top: 30px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        #start-screen button:hover {
+            background-color: var(--color-button-hover);
+        }
+
+        /* Loading indicator (kept for visual consistency, but not used by Firebase anymore) */
+        #loading-indicator {
+            margin-top: 20px;
+            font-size: 1.2em;
+            color: var(--color-primary);
+            display: none; /* Hide by default now */
+        }
+
+        /* --- Écran de jeu --- */
+        #game-screen {
+            display: none; /* Caché par défaut, affiché par JS */
+            flex-direction: column;
+            width: 100%;
+            height: 100vh;
+            position: relative;
+            align-items: center;
+        }
+
+        #game-board-container {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            white-space: nowrap;
+            position: relative;
+            height: 200px;
+            display: flex;
+            align-items: center;
+            margin-top: 50px;
+            padding-bottom: 20px;
+        }
+
+        .case {
+            display: inline-flex;
+            flex-shrink: 0;
+            width: 150px;
+            height: 150px;
+            background-color: var(--color-secondary);
+            border: 2px solid var(--color-primary);
+            border-radius: 10px;
+            margin: 0 5px;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            font-weight: bold;
+            color: var(--color-primary);
+            transition: background-color 0.5s ease;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        /* Styles pour les niveaux d'intensité des cases (appliqués par JS) */
+        .level-1 { background-color: var(--color-background-level1); border-color: var(--color-primary); }
+        .level-2 { background-color: var(--color-background-level2); border-color: var(--color-primary); }
+        .level-3 { background-color: var(--color-background-level3); border-color: #D32F2F; }
+        .level-4 { background-color: var(--color-background-level4); border-color: #B71C1C; }
+        .level-5 { background-color: var(--color-background-level5); border-color: #4B0082; color: white; }
+
+
+        /* Base style for all case emojis */
+        .case .emoji-icon {
+            position: absolute;
+            font-size: 0.8em; /* Slightly smaller than case number */
+        }
+
+        /* Specific positions for each icon */
+        .case .go-back-emoji { top: 5px; right: 5px; }
+        .case .undress-emoji { top: 5px; left: 5px; }
+        .case .action-emoji { bottom: 5px; right: 5px; }
+        .case .truth-dare-emoji { bottom: 5px; left: 5px; }
+        .case .massage-sensory-emoji { top: 5px; /* Adjust as needed for centering */ }
+        .case .role-play-emoji { bottom: 5px; /* Adjust as needed for centering */ }
+        .case .sexual-position-emoji { right: 5px; /* Adjust as needed for centering */ }
+
+
+        /* Style for special cases borders/shadows */
+        .case.go-back-case { border-color: #FF0000; box-shadow: 0 0 15px rgba(255, 0, 0, 0.4); }
+        .case.undress-case { border-color: #FFD700; box-shadow: 0 0 15px rgba(255, 215, 0, 0.4); }
+        .case.action-case { border-color: #00FF00; box-shadow: 0 0 15px rgba(0, 255, 0, 0.4); }
+        .case.truth-dare-case { border-color: #00BFFF; /* Bleu clair */ box-shadow: 0 0 15px rgba(0, 191, 255, 0.4); }
+        .case.massage-sensory-case { border-color: #FF69B4; /* Rose vif */ box-shadow: 0 0 15px rgba(255, 105, 180, 0.4); }
+        .case.role-play-case { border-color: #9370DB; /* Violet moyen */ box-shadow: 0 0 15px rgba(147, 112, 219, 0.4); }
+        .case.sexual-position-case { border-color: #4B0082; /* Bordure plus foncée pour le violet */ box-shadow: 0 0 15px rgba(75, 0, 130, 0.4); }
+
+        /* Styles pour les cases Vestiaire - Éclaircies et texte visible */
+        .case.vestiaire-case {
+            background-color: #A9A9A9; /* Gris plus clair */
+            border-color: #666666; /* Bordure foncée mais visible */
+            color: white; /* Texte blanc pour contraster */
+            font-size: 1.8em; /* Rendre le texte "Vestiaire" visible */
+            flex-direction: column; /* Pour empiler icône et texte si besoin */
+            position: relative;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.6);
+        }
+
+        .vestiaire-case .vestiaire-icon {
+            font-size: 2.5em; /* Grande icône */
+            color: white; /* Couleur de l'icône - reste blanc pour contraster avec le gris clair */
+            margin-bottom: 5px; /* Espace entre icône et texte */
+            position: static; /* Supprime le positionnement absolu pour le flux normal */
+        }
+
+        /* Style pour la case Départ */
+        .case.start-case {
+            background-color: #4CAF50; /* Vert pour le départ */
+            border-color: #388E3C;
+            color: white;
+            font-size: 2em;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+
+        .player-token {
+            position: absolute;
+            top: calc(50% - 25px);
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            transition: left 0.8s ease-in-out, transform 0.3s ease;
+            z-index: 10;
+            font-size: 2.5em;
+            color: white;
+        }
+        .player-token.male { background-color: #00BFFF; }
+        .player-token.female { background-color: #FF69B4; }
+
+        /* Styles pour les pions sur la même case */
+        .player-token.on-same-case.male { transform: translateX(-15px); }
+        .player-token.on-same-case.female { transform: translateX(15px); }
+
+
+        /* --- Zone du dé --- */
+        #dice-area {
+            position: fixed;
+            bottom: 100px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 20;
+        }
+
+        /* Styles pour le nouveau dé visuel */
+        #dice-container {
+            width: 80px; /* Taille du dé */
+            height: 80px;
+            background-color: white;
+            border: 2px solid var(--color-primary);
+            border-radius: 10px;
+            position: relative; /* Pour positionner les points */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 10px; /* Espace entre le dé et le bouton */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            overflow: hidden; /* Pour s'assurer que les points ne débordent pas */
+        }
+
+        .dot {
+            position: absolute;
+            width: 15px; /* Taille du point */
+            height: 15px;
+            background-color: black;
+            border-radius: 50%;
+            opacity: 0; /* Caché par défaut */
+            transition: opacity 0.1s ease; /* Transition douce pour l'apparition/disparition des points */
+        }
+
+        /* Positionnement des points */
+        .dot.top-left { top: 10px; left: 10px; }
+        .dot.top-right { top: 10px; right: 10px; }
+        .dot.middle-left { top: 50%; left: 10px; transform: translateY(-50%); }
+        .dot.center { top: 50%; left: 50%; transform: translate(-50%, -50%); }
+        .dot.middle-right { top: 50%; right: 10px; transform: translateY(-50%); }
+        .dot.bottom-left { bottom: 10px; left: 10px; }
+        .dot.bottom-right { bottom: 10px; right: 10px; }
+
+
+        #roll-dice-button {
+            background-color: var(--color-button);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 12px;
+            font-size: 1.5em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        #roll-dice-button:hover {
+            background-color: var(--color-button-hover);
+        }
+
+        #roll-dice-button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        /* --- Pop-up de gage et de victoire (styles partagés) --- */
+        #gag-popup, #victory-popup {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        #gag-popup.active, #victory-popup.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .gag-content { /* Appliqué aux deux pop-ups */
+            background-color: white;
+            padding: 20px 30px; /* Adjusted padding */
+            border-radius: 15px;
+            text-align: center;
+            max-width: 90%;
+            width: 400px;
+            max-height: 95vh; /* Increased max-height for more scroll space */
+            overflow-y: auto; /* Active le défilement vertical si le contenu dépasse */
+            box-sizing: border-box; /* Ensures padding is included in height calculation */
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+            color: var(--color-text);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        #gag-popup.active .gag-content, #victory-popup.active .gag-content {
+            transform: scale(1);
+        }
+
+        .gag-content h2 {
+            color: var(--color-button);
+            margin-top: 0;
+            font-size: 2em;
+        }
+
+        .gag-content p {
+            font-size: 1.2em;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            /* Removed overflow-y: auto and max-height from p tag, as parent .gag-content handles it */
+        }
+
+        /* Style pour l'image du gage */
+        .gag-image {
+            max-width: 100%;
+            height: auto;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .gag-content button {
+            background-color: var(--color-button);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            margin: 5px; /* Pour espacer les boutons de victoire */
+        }
+
+        .gag-content button:hover {
+            background-color: var(--color-button-hover);
+        }
+
+        /* Petit indicateur de joueur actuel */
+        #current-player-indicator {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 1.1em;
+            color: var(--color-primary);
+            z-index: 50;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        /* --- Debug Controls --- */
+        #toggle-debug-button {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 8px;
+            font-size: 0.9em;
+            cursor: pointer;
+            z-index: 60;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        #debug-controls {
+            display: none;
+            position: fixed;
+            top: 60px;
+            right: 20px;
+            background-color: var(--color-debug-bg);
+            border: 1px solid var(--color-debug-border);
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            z-index: 55;
+            flex-direction: column;
+            gap: 10px;
+            align-items: flex-start;
+        }
+
+        #debug-controls label {
+            font-weight: bold;
+            color: var(--color-text);
+            font-size: 0.9em;
+        }
+
+        #debug-controls input[type="number"] {
+            width: 80px;
+            padding: 8px;
+            border: 1px solid var(--color-debug-border);
+            border-radius: 5px;
+            font-size: 1em;
+        }
+
+        #debug-controls button {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        #debug-controls button:hover {
+            background-color: #218838;
+        }
+
+        /* Styles pour le thème bleu (joueur homme) */
+        #current-player-indicator.blue-theme {
+            color: var(--color-blue-primary);
+        }
+
+        #dice-container.blue-theme {
+            border-color: var(--color-blue-primary);
+        }
+
+        #dice-area.blue-theme #roll-dice-button {
+            background-color: var(--color-blue-button);
+        }
+
+        #dice-area.blue-theme #roll-dice-button:hover {
+            background-color: var(--color-blue-button-hover);
+        }
+
+        /* Admin Mode Popup */
+        #admin-popup {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        #admin-popup.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .admin-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            max-width: 90%;
+            width: 500px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+            color: var(--color-text);
+        }
+
+        #admin-popup.active .admin-content {
+            transform: scale(1);
+        }
+
+        .admin-content h2 {
+            color: #4CAF50; /* Green for admin */
+            margin-top: 0;
+            font-size: 2em;
+        }
+
+        .admin-content p {
+            font-size: 1.1em;
+            margin-bottom: 20px;
+        }
+
+        .admin-content input[type="password"] {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            width: calc(100% - 20px);
+            margin-bottom: 15px;
+        }
+
+        .admin-content button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            margin: 5px;
+        }
+
+        .admin-content button:hover {
+            background-color: #388E3C;
+        }
+
+        /* Custom Message Box */
+        #message-box {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            z-index: 1000;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            font-size: 1.2em;
+            max-width: 80%;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Écran de Démarrage -->
+    <div id="start-screen">
+        <h1>Le Jeu des Amoureux</h1>
+        <label for="player1-name">Prénom de Monsieur :</label>
+        <input type="text" id="player1-name" placeholder="Ex: Jean">
+
+        <div class="emoji-selection">
+            <label>Choisissez l'emoji de Monsieur :</label>
+            <div id="male-emoji-options" class="emoji-options">
+                <!-- Emojis pour homme générés par JS -->
+            </div>
+        </div>
+
+        <label for="player1-clothes">Nombre de vêtements de Monsieur :</label>
+        <input type="number" id="player1-clothes" min="0" value="3">
+        <label for="player1-underwear">Nombre de sous-vêtements de Monsieur :</label>
+        <input type="number" id="player1-underwear" min="0" value="1">
+
+        <label for="player2-name">Prénom de Madame :</label>
+        <input type="text" id="player2-name" placeholder="Ex: Sophie">
+
+        <div class="emoji-selection">
+            <label>Choisissez l'emoji de Madame :</label>
+            <div id="female-emoji-options" class="emoji-options">
+                <!-- Emojis pour femme générés par JS -->
+            </div>
+        </div>
+
+        <label for="player2-clothes">Nombre de vêtements de Madame :</label>
+        <input type="number" id="player2-clothes" min="0" value="3">
+        <label for="player2-underwear">Nombre de sous-vêtements de Madame :</label>
+        <input type="number" id="player2-underwear" min="0" value="1">
+
+        <button id="start-game-button">Commencer le jeu !</button>
+        <button id="admin-mode-button">Mode Administrateur</button>
+        <div id="loading-indicator">Chargement du jeu...</div>
+    </div>
+
+    <!-- Écran de Jeu -->
+    <div id="game-screen">
+        <div id="current-player-indicator">Au tour de : <span id="current-player-name"></span></div>
+
+        <!-- Bouton pour afficher/masquer les contrôles de débogage -->
+        <button id="toggle-debug-button">Débogage</button>
+
+        <!-- Panneau de contrôles de débogage -->
+        <div id="debug-controls">
+            <label for="target-square-input">Aller à la case :</label>
+            <input type="number" id="target-square-input" min="1" max="69" value="1">
+            <button id="manual-move-button">Déplacer à la case</button>
+        </div>
+
+        <div id="game-board-container">
+            <!-- Les cases seront générées ici par JavaScript -->
+            <!-- Les pions utilisent maintenant les emojis choisis -->
+            <div id="player1-token" class="player-token male"></div>
+            <div id="player2-token" class="player-token female"></div>
+        </div>
+
+        <div id="dice-area">
+            <!-- Nouveau dé visuel -->
+            <div id="dice-container">
+                <span class="dot top-left"></span>
+                <span class="dot top-right"></span>
+                <span class="dot middle-left"></span>
+                <span class="dot center"></span>
+                <span class="dot middle-right"></span>
+                <span class="dot bottom-left"></span>
+                <span class="dot bottom-right"></span>
+            </div>
+            <button id="roll-dice-button">Lancer le dé !</button>
+        </div>
+    </div>
+
+    <!-- Pop-up de Gage -->
+    <div id="gag-popup">
+        <div class="gag-content">
+            <h2 id="gag-title">Défi Coquin !</h2>
+            <img id="gag-image" src="" alt="Image du gage" class="gag-image" onerror="this.style.display='none'">
+            <p id="gag-text"></p>
+            <button id="gag-done-button">Gage terminé !</button>
+        </div>
+    </div>
+
+    <!-- Pop-up de Victoire -->
+    <div id="victory-popup">
+        <div class="gag-content">
+            <h2 id="victory-title">Félicitations !</h2>
+            <p id="victory-message"></p>
+            <button id="restart-game-button">Recommencer une nouvelle partie</button>
+            <button id="end-session-button">Terminer la session</button>
+        </div>
+    </div>
+
+    <!-- Admin Mode Popup -->
+    <div id="admin-popup">
+        <div class="admin-content">
+            <h2>Mode Administrateur</h2>
+            <p>Veuillez entrer le mot de passe administrateur.</p>
+            <input type="password" id="admin-password-input" placeholder="Mot de passe">
+            <button id="admin-login-button">Se connecter</button>
+            <button id="admin-close-button">Fermer</button>
+            <div id="admin-panel-content" style="display: none;">
+                <h3>Gestion des Gages</h3>
+                <p>Ceci est un espace réservé pour l'interface de gestion des gages. Tu pourras ici ajouter, modifier et supprimer les gages.</p>
+                <button id="add-gage-button">Ajouter un Gage</button>
+                <!-- Plus de contrôles ici pour l'édition/suppression -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Message Box -->
+    <div id="message-box"></div>
+
+    <script type="module">
+        // Importe les fonctions nécessaires de Firebase
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // CONFIGURATION FIREBASE
+        // SI TU EXÉCUTES CE FICHIER DIRECTEMENT DANS TON NAVIGATEUR (HORS ENVIRONNEMENT CANVAS),
+        // TU DOIS REMPLACER L'OBJET 'firebaseConfig' CI-DESSOUS PAR LA CONFIGURATION DE TON PROJET FIREBASE.
+        // Tu peux trouver cette configuration dans ta console Firebase (Paramètres du projet > Vos applications > Application Web).
+        const firebaseConfig = {
+            apiKey: "AIzaSyDXxfz5VdNiInngWzn3wtKVDJlBBz0272U", // <-- REMPLACE CECI PAR TA CLÉ API FIREBASE
+            authDomain: "jeuoiecoquin.firebaseapp.com", // <-- REMPLACE CECI
+            projectId: "jeuoiecoquin", // <-- REMPLACE CECI
+            storageBucket: "jeuoiecoquin.firebasestorage.app", // <-- REMPLACE CECI
+            messagingSenderId: "642698244266", // <-- REMPLACE CECI
+            appId: "1:642698244266:web:5c7a7e041b6be50bd7a0d3" // <-- REMPLACE CECI
+            // measurementId: "G-XXXXXXXXXX" // Optionnel, si tu utilises Google Analytics
+        };
+
+        // L'ID de l'application est maintenant dérivé du projectId de ta configuration Firebase.
+        // Si tu n'as pas de projectId, il utilisera 'default-app-id'.
+        const appId = firebaseConfig.projectId || 'default-app-id';
+
+        // Ajout de logs pour vérifier la configuration Firebase
+        console.log("[Firebase Config] Parsed firebaseConfig:", firebaseConfig);
+        console.log("[Firebase Config] Using appId:", appId);
+
+
+        // Vérification si la clé API est présente et si l'objet n'est pas vide
+        if (!firebaseConfig || Object.keys(firebaseConfig).length === 0 || !firebaseConfig.apiKey || firebaseConfig.apiKey === "VOTRE_API_KEY") {
+            console.error("[Firebase Config] Erreur: La configuration Firebase est manquante ou la clé API n'est pas définie. Si tu exécutes ce fichier localement, assure-toi d'avoir remplacé les valeurs par défaut dans 'firebaseConfig'.");
+            // Afficher un message à l'utilisateur si la configuration est critique
+            document.addEventListener('DOMContentLoaded', () => {
+                showMessage("Erreur de configuration Firebase: Clé API manquante ou incorrecte. Le jeu ne pourra pas sauvegarder la progression. Si tu es en local, mets à jour 'firebaseConfig' dans le code.");
+                // Désactiver les boutons qui dépendent de Firebase
+                const startGameButton = document.getElementById('start-game-button');
+                const adminModeButton = document.getElementById('admin-mode-button');
+                if (startGameButton) startGameButton.disabled = true;
+                if (adminModeButton) adminModeButton.disabled = true;
+            });
+            // Empêcher l'initialisation de Firebase si la config est invalide
+            // throw new Error("Firebase API Key missing."); // Commenté pour ne pas bloquer le rendu si l'utilisateur veut juste voir l'UI
+        }
+
+        // Initialise Firebase UNIQUEMENT si la configuration semble valide
+        let app;
+        let auth;
+        let db;
+        if (firebaseConfig && firebaseConfig.apiKey && firebaseConfig.apiKey !== "VOTRE_API_KEY") {
+            app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+        } else {
+            console.warn("[Firebase Init] Firebase ne sera pas initialisé car la configuration est invalide ou manquante. La sauvegarde ne fonctionnera pas.");
+        }
+
+
+        // Variables globales pour Firebase
+        let userId = null; // Sera défini après l'authentification
+        let gameDocRef = null; // Référence au document Firestore pour la partie en cours
+
+        // Constantes du jeu
+        const totalOriginalCases = 69; // Nombre de cases numérotées (1 à 69)
+        const numVestiaireCases = 2; // Nombre de cases vestiaire ajoutées
+        const startCaseIndex = 0; // Index de la case de départ dans le tableau
+        const finalCaseArrayIndex = totalOriginalCases + numVestiaireCases; // Index de la dernière case du plateau (71)
+        const totalBoardCases = finalCaseArrayIndex + 1; // Nombre total de cases dans le tableau (72, de 0 à 71)
+
+        // Indices des cases Vestiaire (index dans le tableau de cases)
+        const vestiaire1Index = 31;
+        const vestiaire2Index = 62;
+
+        // Mise à jour de l'indice de début des positions sexuelles (index dans le tableau)
+        const sexualPositionsStartCase = 63;
+
+
+        // Variables d'état du jeu
+        let player1Name = '';
+        let player2Name = '';
+        let currentPlayer = 1; // 1 pour le joueur 1 (homme), 2 pour le joueur 2 (femme)
+        let player1Position = startCaseIndex; // Position actuelle du joueur 1 (index de la case, 0-71)
+        let player2Position = startCaseIndex; // Position actuelle du joueur 2 (index de la case, 0-71)
+        let player1Clothes = 0;
+        let player1Underwear = 0;
+        let player2Clothes = 0;
+        let player2Underwear = 0;
+
+        let gameReady = false; // Indique si le jeu est initialisé
+        let isMoving = false; // Empêche de relancer le dé pendant le déplacement du pion
+
+        // Emojis par défaut (peuvent être modifiés par l'utilisateur)
+        let selectedMaleEmoji = '🎩';
+        let selectedFemaleEmoji = '💋';
+
+        // Tableaux pour stocker les index des cases spéciales aléatoires
+        let goBackCases = [];
+        let undressCases = [];
+        let actionCases = [];
+        let truthOrDareCases = [];
+        let massageSensoryCases = [];
+        let rolePlayCases = [];
+
+        // Variables pour la résolution des promesses des pop-ups
+        let resolveGagPromise = null;
+        let resolveVictoryPromise = null;
+
+        // --- Données de Gages (chargées depuis Firestore) ---
+        // Ces variables seront remplies par la fonction loadGagesFromFirestore
+        let goBackGagesData = [];
+        let surpriseGagesData = [];
+        let actionGagesData = [];
+        let undressGagesData = [];
+        let truthOrDareGagesData = [];
+        let massageSensoryGagesData = [];
+        let rolePlayGagesData = [];
+        let sexualPositionsGagesData = [];
+        let finalGageData = [];
+        let vestiaireGagesData = {}; // Objet pour les gages de vestiaire
+
+
+        // Références aux éléments DOM
+        const startScreen = document.getElementById('start-screen');
+        const gameScreen = document.getElementById('game-screen');
+        const player1NameInput = document.getElementById('player1-name');
+        const player2NameInput = document.getElementById('player2-name');
+        const player1ClothesInput = document.getElementById('player1-clothes');
+        const player1UnderwearInput = document.getElementById('player1-underwear');
+        const player2ClothesInput = document.getElementById('player2-clothes');
+        const player2UnderwearInput = document.getElementById('player2-underwear');
+        const startGameButton = document.getElementById('start-game-button');
+        const maleEmojiOptionsDiv = document.getElementById('male-emoji-options');
+        const femaleEmojiOptionsDiv = document.getElementById('female-emoji-options');
+        const gameBoardContainer = document.getElementById('game-board-container');
+        const player1Token = document.getElementById('player1-token');
+        const player2Token = document.getElementById('player2-token');
+        const rollDiceButton = document.getElementById('roll-dice-button');
+        const diceContainer = document.getElementById('dice-container');
+        const gagPopup = document.getElementById('gag-popup');
+        const gagTitle = document.getElementById('gag-title');
+        const gagText = document.getElementById('gag-text');
+        const gagImage = document.getElementById('gag-image');
+        const gagDoneButton = document.getElementById('gag-done-button');
+        const currentPlayerNameDisplay = document.getElementById('current-player-name');
+        const loadingIndicator = document.getElementById('loading-indicator');
+        const diceArea = document.getElementById('dice-area'); // Référence correcte pour diceArea
+
+        // Debug controls references
+        const toggleDebugButton = document.getElementById('toggle-debug-button');
+        const debugControls = document.getElementById('debug-controls');
+        const targetSquareInput = document.getElementById('target-square-input');
+        const manualMoveButton = document.getElementById('manual-move-button');
+
+        // Victory Pop-up references
+        const victoryPopup = document.getElementById('victory-popup');
+        const victoryTitle = document.getElementById('victory-title');
+        const victoryMessage = document.getElementById('victory-message');
+        const restartGameButton = document.getElementById('restart-game-button');
+        const endSessionButton = document.getElementById('end-session-button');
+
+        // Admin Mode references
+        const adminModeButton = document.getElementById('admin-mode-button');
+        const adminPopup = document.getElementById('admin-popup');
+        const adminPasswordInput = document.getElementById('admin-password-input');
+        const adminLoginButton = document.getElementById('admin-login-button');
+        const adminCloseButton = document.getElementById('admin-close-button');
+        const adminPanelContent = document.getElementById('admin-panel-content');
+        const addGageButton = document.getElementById('add-gage-button'); // Placeholder for future use
+
+        // Custom Message Box reference
+        const messageBox = document.getElementById('message-box');
+
+        // Références aux points du dé
+        const diceDots = {
+            'top-left': document.querySelector('#dice-container .top-left'),
+            'top-right': document.querySelector('#dice-container .top-right'),
+            'middle-left': document.querySelector('#dice-container .middle-left'),
+            'center': document.querySelector('#dice-container .center'),
+            'middle-right': document.querySelector('#dice-container .middle-right'),
+            'bottom-left': document.querySelector('#dice-container .bottom-left'),
+            'bottom-right': document.querySelector('#dice-container .bottom-right')
+        };
+
+
+        // Listes d'emojis disponibles
+        const maleEmojis = ['🎩', '🤵', '🔥', '🕺', '💪', '👑'];
+        const femaleEmojis = ['💋', '👠', '💃', '❤️', '💅', '👸'];
+
+
+        // --- Fonctions utilitaires ---
+
+        /**
+         * Affiche un message personnalisé dans une boîte temporaire.
+         * Remplace les alertes natives du navigateur.
+         * @param {string} message - Le message à afficher.
+         * @param {number} duration - La durée d'affichage du message en ms.
+         */
+        function showMessage(message, duration = 3000) {
+            messageBox.textContent = message;
+            messageBox.style.display = 'block';
+            setTimeout(() => {
+                messageBox.style.display = 'none';
+            }, duration);
+        }
+
+        /**
+         * Initialise les options d'emojis pour un joueur donné.
+         * @param {HTMLElement} container - Le conteneur DOM pour les options d'emojis.
+         * @param {Array<string>} emojis - La liste des emojis à afficher.
+         * @param {string} playerType - 'male' ou 'female'.
+         */
+        function initializeEmojiOptions(container, emojis, playerType) {
+            console.log(`[initializeEmojiOptions] Début pour ${playerType}. Conteneur:`, container);
+            if (!container) {
+                console.error(`[initializeEmojiOptions] Erreur: Conteneur d'emojis non trouvé pour ${playerType}.`);
+                return;
+            }
+            container.innerHTML = ''; // Nettoie les options existantes
+            emojis.forEach(emoji => {
+                const emojiDiv = document.createElement('div');
+                emojiDiv.classList.add('emoji-option');
+                emojiDiv.textContent = emoji;
+                emojiDiv.dataset.emoji = emoji; // Stocke l'emoji dans un attribut de données
+
+                // Sélectionne l'emoji par défaut
+                if ((playerType === 'male' && emoji === selectedMaleEmoji) ||
+                    (playerType === 'female' && emoji === selectedFemaleEmoji)) {
+                    emojiDiv.classList.add('selected');
+                }
+
+                emojiDiv.addEventListener('click', () => {
+                    // Désélectionne l'ancien emoji
+                    const currentSelected = container.querySelector('.emoji-option.selected');
+                    if (currentSelected) {
+                        currentSelected.classList.remove('selected');
+                    }
+                    // Sélectionne le nouvel emoji
+                    emojiDiv.classList.add('selected');
+                    if (playerType === 'male') {
+                        selectedMaleEmoji = emoji;
+                    } else {
+                        selectedFemaleEmoji = emoji;
+                    }
+                    console.log(`[initializeEmojiOptions] Emoji sélectionné pour ${playerType}: ${emoji}`);
+                });
+                container.appendChild(emojiDiv);
+            });
+            console.log(`[initializeEmojiOptions] Emojis initialisés pour ${playerType}. Nombre d'options: ${container.children.length}`);
+        }
+
+        /**
+         * Sélectionne aléatoirement des cases uniques pour les catégories spéciales.
+         * @param {number} count - Le nombre de cases à sélectionner.
+         * @param {Array<number>} availableIndices - La liste des index de cases disponibles.
+         * @param {Array<number>} selectedIndices - Le tableau où stocker les index sélectionnés.
+         */
+        function assignRandomUniqueCases(count, availableIndices, selectedIndices) {
+            for (let i = 0; i < count; i++) {
+                if (availableIndices.length === 0) {
+                    console.warn(`Pas assez de cases disponibles pour assigner ${count - i} cases.`);
+                    break;
+                }
+                const randomIndex = Math.floor(Math.random() * availableIndices.length);
+                const caseIndex = availableIndices[randomIndex];
+                selectedIndices.push(caseIndex);
+                availableIndices.splice(randomIndex, 1); // Supprime pour assurer l'unicité
+            }
+        }
+
+        /**
+         * Convertit un index de tableau de case en son numéro de case visuel (1 à 69).
+         * Gère la case de départ et les vestiaires qui ne sont pas numérotés.
+         * @param {number} arrayIndex - L'index de la case dans le tableau.
+         * @returns {number} Le numéro de case visuel (1-69) ou 0 pour la case de départ, ou un float pour les vestiaires.
+         */
+        function getVisualCaseNumber(arrayIndex) {
+            if (arrayIndex === startCaseIndex) return 0; // Case de départ
+            if (arrayIndex === vestiaire1Index) return 30.5; // Vestiaire 1 (entre 30 et 31)
+            if (arrayIndex === vestiaire2Index) return 60.5; // Vestiaire 2 (entre 60 et 61)
+
+            // Pour les cases numérotées
+            let visualNumber = arrayIndex;
+            if (arrayIndex > vestiaire2Index) {
+                visualNumber -= numVestiaireCases; // Décalage pour les deux vestiaires
+            } else if (arrayIndex > vestiaire1Index) {
+                visualNumber -= 1; // Décalage pour le premier vestiaire
+            }
+            // Décalage pour la case de départ (index 0)
+            visualNumber -= 0; // La case 1 est à l'index 1, donc pas de -1 ici si on considère le 0 comme départ
+
+            return visualNumber;
+        }
+
+
+        /**
+         * Génère dynamiquement les cases du plateau de jeu et leur applique les styles de niveau.
+         */
+        function createBoard() {
+            console.log("[createBoard] Création du plateau de jeu...");
+            gameBoardContainer.innerHTML = ''; // Nettoie le plateau existant avant de le recréer
+
+            // Ajout des pions directement au conteneur du plateau
+            gameBoardContainer.appendChild(player1Token);
+            gameBoardContainer.appendChild(player2Token);
+
+            // Réinitialise les tableaux de cases spéciales
+            goBackCases = [];
+            undressCases = [];
+            actionCases = [];
+            truthOrDareCases = [];
+            massageSensoryCases = [];
+            rolePlayCases = [];
+
+            // Définition des plages de cases par niveau pour l'assignation des cases spéciales
+            // Les startIdx/endIdx sont les INDEX réels du tableau de cases.
+            // Les 'level' sont basés sur le NUMÉRO VISUEL de la case.
+            const levelRangesForRandomAssignment = [
+                // Niveau 1: Cases 1-15 (indices 1-15)
+                { startIdx: 1, endIdx: 15, level: 1, goBack: 1, undress: 2, action: 3, truthDare: 5, massage: 4, rolePlay: 0 },
+                // Niveau 2: Cases 16-30 (indices 16-30)
+                { startIdx: 16, endIdx: 30, level: 2, goBack: 1, undress: 2, action: 3, truthDare: 4, massage: 3, rolePlay: 2 },
+                // Niveau 3: Cases 31-45 (indices 32-46, car vestiaire1Index est à 31)
+                { startIdx: 32, endIdx: 46, level: 3, goBack: 1, undress: 2, action: 3, truthDare: 3, massage: 3, rolePlay: 3 },
+                // Niveau 4: Cases 46-60 (indices 47-61, car vestiaire1Index et vestiaire2Index sont avant)
+                { startIdx: 47, endIdx: 61, level: 4, goBack: 1, undress: 2, action: 3, truthDare: 3, massage: 3, rolePlay: 3 }
+            ];
+
+            // Assignation des cases spéciales aléatoirement dans les plages définies
+            levelRangesForRandomAssignment.forEach(range => {
+                let currentAvailable = [];
+                for (let i = range.startIdx; i <= range.endIdx; i++) {
+                    // Exclut les indices des vestiaires des cases disponibles pour les autres types de gages
+                    // (Bien que les ranges soient déjà définis pour les exclure, c'est une sécurité)
+                    if (i !== vestiaire1Index && i !== vestiaire2Index && i !== startCaseIndex && i !== finalCaseArrayIndex) {
+                        currentAvailable.push(i);
+                    }
+                }
+                assignRandomUniqueCases(range.goBack, currentAvailable, goBackCases);
+                assignRandomUniqueCases(range.undress, currentAvailable, undressCases);
+                assignRandomUniqueCases(range.action, currentAvailable, actionCases);
+                assignRandomUniqueCases(range.truthDare, currentAvailable, truthOrDareCases);
+                assignRandomUniqueCases(range.massage, currentAvailable, massageSensoryCases);
+                assignRandomUniqueCases(range.rolePlay, currentAvailable, rolePlayCases);
+            });
+
+
+            // Construction du plateau case par case
+            let currentNumberedCaseCount = 0; // Compteur pour les numéros de cases visuels
+            for (let i = 0; i < totalBoardCases; i++) {
+                const caseDiv = document.createElement('div');
+                caseDiv.classList.add('case');
+                caseDiv.dataset.caseIndex = i; // Stocke l'indice réel de la case (0 à 71)
+
+                if (i === startCaseIndex) {
+                    caseDiv.classList.add('start-case');
+                    caseDiv.textContent = "Départ";
+                } else if (i === vestiaire1Index) {
+                    caseDiv.classList.add('vestiaire-case');
+                    addEmojiToCase(caseDiv, '💃', 'vestiaire-icon'); // Icône pour le vestiaire vêtements (Danseuse)
+                    const textSpan = document.createElement('span');
+                    textSpan.textContent = "Vestiaire";
+                    caseDiv.appendChild(textSpan);
+                } else if (i === vestiaire2Index) {
+                    caseDiv.classList.add('vestiaire-case');
+                    addEmojiToCase(caseDiv, '😉', 'vestiaire-icon'); // Icône pour le vestiaire sous-vêtements (Clin d'œil)
+                    const textSpan = document.createElement('span');
+                    textSpan.textContent = "Vestiaire";
+                    caseDiv.appendChild(textSpan);
+                } else if (i === finalCaseArrayIndex) {
+                    caseDiv.textContent = "Arrivée"; // Dernière case
+                    caseDiv.classList.add('level-5'); // La case d'arrivée est toujours de niveau 5
+                }
+                else {
+                    // Cas normaux numérotés
+                    currentNumberedCaseCount++;
+                    caseDiv.textContent = currentNumberedCaseCount;
+
+                    // Attribution des classes de niveau pour le style visuel
+                    const visualCaseNum = currentNumberedCaseCount; // Utilise le compteur pour le niveau
+                    if (visualCaseNum >= 1 && visualCaseNum <= 15) {
+                        caseDiv.classList.add('level-1');
+                    } else if (visualCaseNum >= 16 && visualCaseNum <= 30) {
+                        caseDiv.classList.add('level-2');
+                    } else if (visualCaseNum >= 31 && visualCaseNum <= 45) {
+                        caseDiv.classList.add('level-3');
+                    } else if (visualCaseNum >= 46 && visualCaseNum <= 60) {
+                        caseDiv.classList.add('level-4');
+                    } else if (visualCaseNum >= 61 && visualCaseNum <= 69) { // Cases de positions sexuelles
+                        caseDiv.classList.add('level-5');
+                        caseDiv.classList.add('sexual-position-case');
+                        addEmojiToCase(caseDiv, '🔥', 'sexual-position-emoji');
+                    }
+
+                    // Ajoute les classes et emojis pour les autres cases spéciales
+                    if (goBackCases.includes(i)) {
+                        caseDiv.classList.add('go-back-case');
+                        addEmojiToCase(caseDiv, '↩️', 'go-back-emoji');
+                    }
+                    if (undressCases.includes(i)) {
+                        caseDiv.classList.add('undress-case');
+                        addEmojiToCase(caseDiv, '👗', 'undress-emoji');
+                    }
+                    if (actionCases.includes(i)) {
+                        caseDiv.classList.add('action-case');
+                        addEmojiToCase(caseDiv, '⚡', 'action-emoji');
+                    }
+                    if (truthOrDareCases.includes(i)) {
+                        caseDiv.classList.add('truth-dare-case');
+                        addEmojiToCase(caseDiv, '❓', 'truth-dare-emoji');
+                    }
+                    if (massageSensoryCases.includes(i)) {
+                        caseDiv.classList.add('massage-sensory-case');
+                        addEmojiToCase(caseDiv, '🖐️', 'massage-sensory-emoji');
+                    }
+                    if (rolePlayCases.includes(i)) {
+                        caseDiv.classList.add('role-play-case');
+                        addEmojiToCase(caseDiv, '🎭', 'role-play-emoji');
+                    }
+                }
+                gameBoardContainer.appendChild(caseDiv);
+            }
+            // Positionne les pions sur la case de départ après la création du plateau
+            updatePlayerTokenPositions(player1Token, player1Position);
+            updatePlayerTokenPositions(player2Token, player2Position);
+            scrollBoardToPlayers(); // Centre la vue sur le départ
+            console.log("[createBoard] Plateau de jeu créé.");
+        }
+
+        /**
+         * Ajoute un élément emoji à une case.
+         * @param {HTMLElement} caseDiv - L'élément DIV de la case.
+         * @param {string} emojiChar - Le caractère emoji.
+         * @param {string} className - La classe CSS à ajouter au span de l'emoji.
+         */
+        function addEmojiToCase(caseDiv, emojiChar, className) {
+            const emojiSpan = document.createElement('span');
+            emojiSpan.classList.add('emoji-icon', className);
+            emojiSpan.textContent = emojiChar;
+            caseDiv.appendChild(emojiSpan);
+        }
+
+        /**
+         * Met à jour la position visuelle d'un pion sur le plateau.
+         * @param {HTMLElement} tokenElement - L'élément DOM du pion (player1Token ou player2Token).
+         * @param {number} position - La nouvelle position (index de la case).
+         */
+        function updatePlayerTokenPositions(tokenElement, position) {
+            const caseElement = document.querySelector(`.case[data-case-index="${position}"]`);
+            if (caseElement) {
+                // Calcule la position 'left' du pion par rapport au conteneur du plateau
+                // Centre le pion sur la case
+                tokenElement.style.left = `${caseElement.offsetLeft + (caseElement.offsetWidth / 2) - (tokenElement.offsetWidth / 2)}px`;
+            }
+
+            // Gère le décalage si les deux pions sont sur la même case
+            if (player1Position === player2Position && player1Position !== startCaseIndex) { // Ne décale pas sur la case Départ
+                player1Token.classList.add('on-same-case');
+                player2Token.classList.add('on-same-case');
+            } else {
+                player1Token.classList.remove('on-same-case');
+                player2Token.classList.remove('on-same-case');
+            }
+        }
+
+        /**
+         * Fait défiler le conteneur du plateau pour centrer la vue sur le joueur actif.
+         */
+        function scrollBoardToPlayers() {
+            const currentPositionIndex = currentPlayer === 1 ? player1Position : player2Position;
+            const caseElement = document.querySelector(`.case[data-case-index="${currentPositionIndex}"]`);
+
+            if (caseElement) {
+                // Calcule la position de défilement pour centrer la case actuelle
+                const targetScrollLeft = caseElement.offsetLeft - (gameBoardContainer.offsetWidth / 2) + (caseElement.offsetWidth / 2);
+
+                gameBoardContainer.scrollTo({
+                    left: targetScrollLeft,
+                    behavior: 'smooth' // Défilement fluide
+                });
+            }
+        }
+
+        /**
+         * Anime le déplacement d'un pion case par case. Retourne une Promesse.
+         * @param {HTMLElement} tokenElement - Le pion à animer.
+         * @param {number} startPos - Position de départ (index de la case).
+         * @param {number} endPos - Position d'arrivée (index de la case).
+         * @returns {Promise<void>} Une promesse qui se résout une fois l'animation terminée.
+         */
+        function animatePlayerMovement(tokenElement, startPos, endPos) {
+            return new Promise(resolve => {
+                let currentPos = startPos;
+                const stepDuration = 200; // Durée de l'animation pour chaque case
+
+                const moveStep = () => {
+                    if (currentPos === endPos) {
+                        resolve(); // Résout la promesse
+                        return;
+                    }
+
+                    // Détermine la direction du mouvement
+                    const direction = (endPos > currentPos) ? 1 : -1;
+                    currentPos += direction;
+
+                    // Met à jour la position visuelle du pion
+                    updatePlayerTokenPositions(tokenElement, currentPos);
+                    scrollBoardToPlayers(); // Fait défiler le plateau pour suivre le pion
+
+                    // Appelle la prochaine étape après un délai
+                    setTimeout(moveStep, stepDuration);
+                };
+
+                moveStep(); // Démarre l'animation
+            });
+        }
+
+        /**
+         * Affiche la face du dé avec les points correspondants au nombre.
+         * @param {number} number - Le nombre à afficher sur le dé (1-6).
+         */
+        function displayDiceFace(number) {
+            // Cacher tous les points
+            Object.values(diceDots).forEach(dot => {
+                if (dot) dot.style.opacity = '0';
+            });
+
+            // Afficher les points pour le nombre donné
+            switch (number) {
+                case 1:
+                    if (diceDots.center) diceDots.center.style.opacity = '1';
+                    break;
+                case 2:
+                    if (diceDots['top-left']) diceDots['top-left'].style.opacity = '1';
+                    if (diceDots['bottom-right']) diceDots['bottom-right'].style.opacity = '1';
+                    break;
+                case 3:
+                    if (diceDots['top-left']) diceDots['top-left'].style.opacity = '1';
+                    if (diceDots.center) diceDots.center.style.opacity = '1';
+                    if (diceDots['bottom-right']) diceDots['bottom-right'].style.opacity = '1';
+                    break;
+                case 4:
+                    if (diceDots['top-left']) diceDots['top-left'].style.opacity = '1';
+                    if (diceDots['top-right']) diceDots['top-right'].style.opacity = '1';
+                    if (diceDots['bottom-left']) diceDots['bottom-left'].style.opacity = '1';
+                    if (diceDots['bottom-right']) diceDots['bottom-right'].style.opacity = '1';
+                    break;
+                case 5:
+                    if (diceDots['top-left']) diceDots['top-left'].style.opacity = '1';
+                    if (diceDots['top-right']) diceDots['top-right'].style.opacity = '1';
+                    if (diceDots.center) diceDots.center.style.opacity = '1';
+                    if (diceDots['bottom-left']) diceDots['bottom-left'].style.opacity = '1';
+                    if (diceDots['bottom-right']) diceDots['bottom-right'].style.opacity = '1';
+                    break;
+                case 6:
+                    if (diceDots['top-left']) diceDots['top-left'].style.opacity = '1';
+                    if (diceDots['top-right']) diceDots['top-right'].style.opacity = '1';
+                    if (diceDots['middle-left']) diceDots['middle-left'].style.opacity = '1';
+                    if (diceDots['middle-right']) diceDots['middle-right'].style.opacity = '1';
+                    if (diceDots['bottom-left']) diceDots['bottom-left'].style.opacity = '1';
+                    if (diceDots['bottom-right']) diceDots['bottom-right'].style.opacity = '1';
+                    break;
+            }
+        }
+
+
+        /**
+         * Affiche la pop-up de gage et retourne une promesse qui se résout quand le gage est "terminé".
+         * @param {object} gage - L'objet gage contenant title, text, duration, accessories, imageUrl.
+         * @returns {Promise<void>} Une promesse qui se résout lorsque le bouton "Gage terminé" est cliqué.
+         */
+        function showGag(gage) {
+            return new Promise(resolve => {
+                gagTitle.textContent = gage.title;
+                let fullText = gage.text;
+                if (gage.duration) {
+                    fullText += `<br><br>Durée estimée : ${gage.duration}`;
+                }
+                if (gage.accessories && gage.accessories.length > 0) {
+                    fullText += `<br>Accessoires : ${gage.accessories.join(', ')}`;
+                }
+                gagText.innerHTML = fullText; // Utilise innerHTML pour les balises <br>
+
+                // Gère l'image du gage
+                if (gage.imageUrl) {
+                    gagImage.src = gage.imageUrl;
+                    gagImage.style.display = 'block'; // Affiche l'image
+                } else {
+                    gagImage.style.display = 'none'; // Cache l'image si pas d'URL
+                }
+
+                gagPopup.style.display = 'flex';
+                setTimeout(() => gagPopup.classList.add('active'), 10);
+
+                // Stocke la fonction resolve pour qu'elle puisse être appelée par le gestionnaire de clic global
+                resolveGagPromise = resolve;
+            });
+        }
+
+        /**
+         * Cache la pop-up de gage.
+         */
+        function hideGag() {
+            gagPopup.classList.remove('active');
+            setTimeout(() => gagPopup.style.display = 'none', 300);
+            gagImage.src = ''; // Réinitialise l'image pour le prochain gage
+            if (resolveGagPromise) { // S'assure qu'il y a une promesse en attente
+                resolveGagPromise(); // Résout la promesse
+                resolveGagPromise = null; // Nettoie la référence à la promesse résolue
+            }
+        }
+
+        /**
+         * Affiche la pop-up de victoire.
+         * @param {string} winnerName - Le nom du joueur gagnant.
+         * @returns {Promise<void>} Une promesse qui se résout lorsque le bouton de victoire est cliqué.
+         */
+        function showVictoryScreen(winnerName) {
+            return new Promise(resolve => {
+                victoryTitle.textContent = `Félicitations ${winnerName} !`;
+                victoryMessage.textContent = `Tu as atteint la case ${totalOriginalCases} et remporté le Jeu des Amoureux !`;
+
+                victoryPopup.style.display = 'flex';
+                setTimeout(() => victoryPopup.classList.add('active'), 10);
+
+                resolveVictoryPromise = resolve; // Stocke la fonction resolve pour la victoire
+            });
+        }
+
+        /**
+         * Cache la pop-up de victoire.
+         */
+        function hideVictoryScreen() {
+            victoryPopup.classList.remove('active');
+            setTimeout(() => victoryPopup.style.display = 'none', 300);
+            if (resolveVictoryPromise) {
+                resolveVictoryPromise();
+                resolveVictoryPromise = null;
+            }
+        }
+
+
+        /**
+         * Change l'ambiance visuelle du body en fonction du niveau atteint par les joueurs.
+         * @param {number} position - La position la plus avancée des joueurs (index du tableau).
+         */
+        function updateGameAmbiance(position) {
+            let level = 1;
+            const visualPosition = getVisualCaseNumber(position); // Utilise la position visuelle pour le niveau
+
+            if (visualPosition >= 61) { // Visual cases 61-69 (sexual positions)
+                level = 5;
+            } else if (visualPosition >= 46) { // Visual cases 46-60
+                level = 4;
+            } else if (visualPosition >= 31) { // Visual cases 31-45
+                level = 3;
+            } else if (visualPosition >= 16) { // Visual cases 16-30
+                level = 2;
+            } else { // Visual cases 1-15 (and start case 0)
+                level = 1;
+            }
+            document.body.style.backgroundColor = `var(--color-background-level${level})`;
+        }
+
+        /**
+         * Sélectionne un gage aléatoire d'une catégorie donnée.
+         * @param {Array<object>} gageArray - Le tableau de gages de la catégorie.
+         * @param {number} currentVisualPosition - La position visuelle du joueur (pour les gages de niveau).
+         * @returns {object} Le gage sélectionné.
+         */
+        function getRandomGage(gageArray, currentVisualPosition = -1) {
+            let filtered = gageArray;
+            if (currentVisualPosition !== -1) {
+                let currentLevel = 1;
+                // Détermine le niveau en fonction de la position visuelle
+                if (currentVisualPosition >= 61) {
+                    currentLevel = 5;
+                } else if (currentVisualPosition >= 46) {
+                    currentLevel = 4;
+                } else if (currentVisualPosition >= 31) {
+                    currentLevel = 3;
+                } else if (currentVisualPosition >= 16) {
+                    currentLevel = 2;
+                } else {
+                    currentLevel = 1;
+                }
+
+                // Filtre par niveau si le tableau de gages a une propriété 'level'
+                if (gageArray.length > 0 && gageArray[0].hasOwnProperty('level')) {
+                    filtered = gageArray.filter(gage => gage.level === currentLevel);
+                }
+            }
+
+            if (filtered.length === 0) {
+                console.warn(`Aucun gage trouvé pour la catégorie ou le niveau spécifié (position visuelle: ${currentVisualPosition}, array length: ${gageArray.length}). Retourne un gage par défaut.`);
+                return { title: "Défi Général !", text: "Un défi inattendu pour vous deux !", duration: "", accessories: [], imageUrl: "" };
+            }
+            const randomIndex = Math.floor(Math.random() * filtered.length);
+            return filtered[randomIndex];
+        }
+
+
+        /**
+         * Sélectionne un gage approprié en fonction de la position sur le plateau et du type de case.
+         * @param {number} positionArrayIndex - L'index de la case d'arrivée dans le tableau.
+         * @param {string} caseType - Le type de case ('normal', 'go-back', 'action', 'surprise', 'vestiaire-clothes', 'vestiaire-underwear', 'truth-dare', 'massage-sensory', 'role-play', 'sexual-position', 'final-gage').
+         * @param {number} [stepsReceded=0] - Le nombre de cases reculées (pour les gages de retour).
+         * @returns {object} Le gage sélectionné.
+         */
+        function getGage(positionArrayIndex, caseType, stepsReceded = 0) {
+            let selectedGage;
+            const currentPlayerName = currentPlayer === 1 ? player1Name : player2Name;
+            const otherPlayerName = currentPlayer === 1 ? player2Name : player1Name;
+            let playerClothesCount = currentPlayer === 1 ? player1Clothes : player2Clothes;
+            let playerUnderwearCount = currentPlayer === 1 ? player1Underwear : player2Underwear;
+
+            // Détermine la position visuelle pour le filtrage des gages par niveau
+            const visualPosition = getVisualCaseNumber(positionArrayIndex);
+
+            if (caseType === 'final-gage') {
+                selectedGage = getRandomGage(finalGageData, visualPosition);
+            } else if (caseType === 'vestiaire-clothes') {
+                selectedGage = vestiaireGagesData.clothes;
+            } else if (caseType === 'vestiaire-underwear') {
+                selectedGage = vestiaireGagesData.underwear;
+            } else if (caseType === 'go-back') {
+                selectedGage = getRandomGage(goBackGagesData, visualPosition);
+                selectedGage.text = selectedGage.text.replace(/\[steps\]/g, stepsReceded);
+            } else if (caseType === 'sexual-position') {
+                selectedGage = getRandomGage(sexualPositionsGagesData, visualPosition);
+            } else if (caseType === 'undress') {
+                // Les gages de sous-vêtements (type 'underwear') ne sont disponibles qu'à partir du niveau 3.
+                // Le niveau 3 commence à la case visuelle 31.
+                const isUnderwearLevel = visualPosition >= 31;
+
+                if (playerClothesCount > 0) {
+                    selectedGage = getRandomGage(undressGagesData.filter(g => g.type === 'clothes'), visualPosition);
+                    // Décrémente le vêtement
+                    if (currentPlayer === 1) player1Clothes--; else player2Clothes--;
+                } else if (playerUnderwearCount > 0 && isUnderwearLevel) { // Ne retire les sous-vêtements que si au bon niveau
+                    selectedGage = getRandomGage(undressGagesData.filter(g => g.type === 'underwear'), visualPosition);
+                    // Décrémente le sous-vêtement
+                    if (currentPlayer === 1) player1Underwear--; else player2Underwear--;
+                } else {
+                    // Complètement nu OU pas encore au niveau des sous-vêtements, donne un gage action à la place
+                    selectedGage = getRandomGage(actionGagesData, visualPosition);
+                }
+            } else if (caseType === 'action') {
+                selectedGage = getRandomGage(actionGagesData, visualPosition);
+            } else if (caseType === 'truth-dare') {
+                selectedGage = getRandomGage(truthOrDareGagesData, visualPosition);
+            } else if (caseType === 'massage-sensory') {
+                selectedGage = getRandomGage(massageSensoryGagesData, visualPosition);
+            } else if (caseType === 'role-play') {
+                selectedGage = getRandomGage(rolePlayGagesData, visualPosition);
+            } else if (caseType === 'surprise') {
+                selectedGage = getRandomGage(surpriseGagesData, visualPosition); // Surprise gages don't have levels, but pass anyway
+            } else { // Fallback, should not happen if all cases are assigned a type
+                console.warn("Type de case inconnu ou non géré. Retourne un gage par défaut.");
+                selectedGage = { title: "Défi Général !", text: "Un défi inattendu pour vous deux !", duration: "", accessories: [], imageUrl: "" };
+            }
+
+            // Remplace les placeholders par les prénoms des joueurs dans le texte final
+            let finalGageText = selectedGage.text
+                .replace(/\[joueur\]/g, currentPlayerName)
+                .replace(/\[autreJoueur\]/g, otherPlayerName);
+
+            return {
+                title: selectedGage.title,
+                text: finalGageText,
+                duration: selectedGage.duration,
+                accessories: selectedGage.accessories,
+                imageUrl: selectedGage.imageUrl
+            };
+        }
+
+        /**
+         * Met à jour les classes de thème (bleu ou rose) en fonction du joueur actuel.
+         */
+        function updateTheme() {
+            if (currentPlayer === 1) { // Joueur 1 (homme)
+                currentPlayerNameDisplay.parentElement.classList.add('blue-theme');
+                diceContainer.classList.add('blue-theme');
+                diceArea.classList.add('blue-theme'); // Ajoute la classe au conteneur du dé et au bouton
+            } else { // Joueur 2 (femme)
+                currentPlayerNameDisplay.parentElement.classList.remove('blue-theme');
+                diceContainer.classList.remove('blue-theme');
+                diceArea.classList.remove('blue-theme'); // Retire la classe
+            }
+        }
+
+
+        /**
+         * Gère le tour d'un joueur, incluant le déplacement, la gestion des gages et le changement de tour.
+         * @param {number} potentialNewPosition - La position cible potentielle après le lancer de dé (index du tableau).
+         */
+        async function handlePlayerTurn(potentialNewPosition) {
+            if (isMoving) return;
+
+            isMoving = true;
+            rollDiceButton.disabled = true;
+            manualMoveButton.disabled = true;
+
+            try {
+                let currentToken = currentPlayer === 1 ? player1Token : player2Token;
+                let oldPosition = currentPlayer === 1 ? player1Position : player2Position;
+                let playerPositionVariable = currentPlayer === 1 ? 'player1Position' : 'player2Position';
+
+                let finalDestination = Math.min(finalCaseArrayIndex, potentialNewPosition); // La case finale théorique après le lancer de dé
+
+                let stopAtVestiaire = null;
+                // Vérifie si le joueur passe ou atterrit sur le Vestiaire 1
+                if (oldPosition < vestiaire1Index && finalDestination >= vestiaire1Index) {
+                    stopAtVestiaire = vestiaire1Index;
+                }
+                // Vérifie si le joueur passe ou atterrit sur le Vestiaire 2 (et n'a pas déjà été arrêté au Vestiaire 1)
+                if (oldPosition < vestiaire2Index && finalDestination >= vestiaire2Index && (stopAtVestiaire === null || stopAtVestiaire < vestiaire2Index)) {
+                    stopAtVestiaire = vestiaire2Index;
+                }
+
+                if (stopAtVestiaire !== null) {
+                    // Le joueur doit s'arrêter au vestiaire
+                    const vestiaireType = stopAtVestiaire === vestiaire1Index ? 'vestiaire-clothes' : 'vestiaire-underwear';
+                    const gage = getGage(stopAtVestiaire, vestiaireType);
+
+                    // Déplace le pion jusqu'au vestiaire
+                    if (currentPlayer === 1) player1Position = stopAtVestiaire; else player2Position = stopAtVestiaire;
+                    await animatePlayerMovement(currentToken, oldPosition, stopAtVestiaire);
+                    updateGameAmbiance(Math.max(player1Position, player2Position));
+
+                    // Affiche le gage du vestiaire
+                    await showGag(gage);
+
+                    // Le tour se termine ici. Le joueur est maintenant sur la case vestiaire.
+                    // Au prochain tour, il relancera le dé de cette position.
+                    currentPlayer = currentPlayer === 1 ? 2 : 1; // Change de joueur
+                    currentPlayerNameDisplay.textContent = currentPlayer === 1 ? player1Name : player2Name;
+                    updateTheme();
+
+                } else {
+                    // Pas d'arrêt au vestiaire, le joueur se déplace directement vers la destination finale
+                    if (currentPlayer === 1) player1Position = finalDestination; else player2Position = finalDestination;
+                    await animatePlayerMovement(currentToken, oldPosition, finalDestination);
+                    updateGameAmbiance(Math.max(player1Position, player2Position));
+
+                    let currentLandingPosition = finalDestination; // La position où le joueur a finalement atterri
+                    let caseTypeAtLanding = 'normal';
+                    let stepsReceded = 0;
+
+                    // Détermine le type de case à la position d'atterrissage actuelle
+                    if (currentLandingPosition === finalCaseArrayIndex) {
+                        caseTypeAtLanding = 'final-gage';
+                    } else if (goBackCases.includes(currentLandingPosition)) {
+                        caseTypeAtLanding = 'go-back';
+                        stepsReceded = Math.floor(Math.random() * 6) + 1;
+                    } else if (sexualPositionsStartCase <= currentLandingPosition && currentLandingPosition < finalCaseArrayIndex) {
+                        caseTypeAtLanding = 'sexual-position';
+                    } else if (undressCases.includes(currentLandingPosition)) {
+                        caseTypeAtLanding = 'undress';
+                    } else if (actionCases.includes(currentLandingPosition)) {
+                        caseTypeAtLanding = 'action';
+                    } else if (truthOrDareCases.includes(currentLandingPosition)) {
+                        caseTypeAtLanding = 'truth-dare';
+                    } else if (massageSensoryCases.includes(currentLandingPosition)) {
+                        caseTypeAtLanding = 'massage-sensory';
+                    } else if (rolePlayCases.includes(currentLandingPosition)) {
+                        caseTypeAtLanding = 'role-play';
+                    }
+
+                    // Vérifie si les joueurs sont sur la même case (surprise)
+                    if (player1Position === player2Position && player1Position !== startCaseIndex && player1Position !== vestiaire1Index && player1Position !== vestiaire2Index) {
+                        caseTypeAtLanding = 'surprise';
+                    }
+
+                    let gageToExecute = getGage(currentLandingPosition, caseTypeAtLanding, stepsReceded);
+                    await showGag(gageToExecute);
+
+                    // Si c'était une case "Retour en arrière", gère le mouvement de recul et le gage de la nouvelle case
+                    if (caseTypeAtLanding === 'go-back') {
+                        const recedeFromPosition = currentLandingPosition;
+                        const recedeToPosition = Math.max(startCaseIndex, recedeFromPosition - stepsReceded);
+
+                        if (currentPlayer === 1) player1Position = recedeToPosition; else player2Position = recedeToPosition;
+                        await animatePlayerMovement(currentToken, recedeFromPosition, recedeToPosition);
+                        updateGameAmbiance(Math.max(player1Position, player2Position));
+
+                        // Réévalue le type de case à la position de recul
+                        let recededCaseType = 'normal';
+                        if (recedeToPosition === finalCaseArrayIndex) {
+                            recededCaseType = 'final-gage';
+                        } else if (recedeToPosition === vestiaire1Index) {
+                            recededCaseType = 'vestiaire-clothes';
+                        } else if (recedeToPosition === vestiaire2Index) {
+                            recededCaseType = 'vestiaire-underwear';
+                        } else if (sexualPositionsStartCase <= recedeToPosition && recedeToPosition < finalCaseArrayIndex) {
+                            recededCaseType = 'sexual-position';
+                        } else if (undressCases.includes(recedeToPosition)) {
+                            recededCaseType = 'undress';
+                        } else if (actionCases.includes(recedeToPosition)) {
+                            recededCaseType = 'action';
+                        } else if (truthOrDareCases.includes(recedeToPosition)) {
+                            recededCaseType = 'truth-dare';
+                        } else if (massageSensoryCases.includes(recedeToPosition)) {
+                            recededCaseType = 'massage-sensory';
+                        } else if (rolePlayCases.includes(recedeToPosition)) {
+                            recededCaseType = 'role-play';
+                        }
+
+                        // Vérifie si les joueurs sont sur la même case (surprise) à la position de recul
+                        if (player1Position === player2Position && player1Position !== startCaseIndex && player1Position !== vestiaire1Index && player1Position !== vestiaire2Index) {
+                            recededCaseType = 'surprise';
+                        }
+
+                        // Affiche un nouveau gage si la case de recul est spéciale (et n'est pas un autre "retour en arrière" pour éviter les boucles)
+                        if (recededCaseType !== 'normal' && recededCaseType !== 'go-back') {
+                            let recededGage = getGage(recedeToPosition, recededCaseType);
+                            await showGag(recededGage);
+                        }
+                    }
+
+                    // Vérifie la victoire après tous les mouvements et gages
+                    if (player1Position === finalCaseArrayIndex) {
+                        await showVictoryScreen(player1Name);
+                    } else if (player2Position === finalCaseArrayIndex) {
+                        await showVictoryScreen(player2Name);
+                    } else {
+                        currentPlayer = currentPlayer === 1 ? 2 : 1;
+                        currentPlayerNameDisplay.textContent = currentPlayer === 1 ? player1Name : player2Name;
+                        updateTheme();
+                    }
+                } // Fin du bloc 'else' pour les mouvements sans vestiaire
+            } catch (error) {
+                console.error("Une erreur est survenue pendant le tour du joueur :", error);
+            } finally {
+                isMoving = false;
+                rollDiceButton.disabled = false;
+                manualMoveButton.disabled = false;
+            }
+        }
+
+        /**
+         * Réinitialise toutes les variables d'état du jeu et revient à l'écran de démarrage.
+         */
+        function resetGame() {
+            console.log("[resetGame] Réinitialisation du jeu...");
+            player1Position = startCaseIndex; // Réinitialise à la case de départ
+            player2Position = startCaseIndex; // Réinitialise à la case de départ
+            player1Clothes = parseInt(player1ClothesInput.value, 10);
+            player1Underwear = parseInt(player1UnderwearInput.value, 10);
+            player2Clothes = parseInt(player2ClothesInput.value, 10);
+            player2Underwear = parseInt(player2UnderwearInput.value, 10);
+            currentPlayer = 1;
+            gameReady = false;
+            isMoving = false;
+
+            // Masquer les écrans de jeu et de pop-up
+            gameScreen.style.display = 'none';
+            gagPopup.style.display = 'none';
+            victoryPopup.style.display = 'none';
+            debugControls.style.display = 'none';
+            adminPopup.style.display = 'none'; // Cache aussi la popup admin
+
+            // Afficher l'écran de démarrage
+            startScreen.style.display = 'flex';
+            updateGameAmbiance(startCaseIndex); // Réinitialiser l'ambiance à la case de départ
+
+            // Réinitialiser les sélections d'emojis
+            initializeEmojiOptions(maleEmojiOptionsDiv, maleEmojis, 'male');
+            initializeEmojiOptions(femaleEmojiOptionsDiv, femaleEmojis, 'female');
+
+            // Réinitialiser le dé à sa face par défaut
+            displayDiceFace(1);
+            updateTheme(); // S'assurer que le thème est correct au reset (bleu pour le joueur 1 au début)
+            console.log("[resetGame] Jeu réinitialisé.");
+        }
+
+        /**
+         * Charge les données des gages depuis Firestore.
+         */
+        async function loadGagesFromFirestore() {
+            // Vérifie si Firebase est initialisé avant de tenter d'accéder à db
+            if (!db) {
+                console.error("[loadGagesFromFirestore] Firebase Firestore n'est pas initialisé. Impossible de charger les gages.");
+                showMessage("Erreur: Firebase non initialisé. Impossible de charger les gages.");
+                loadingIndicator.style.display = 'none';
+                return;
+            }
+
+            console.log("[loadGagesFromFirestore] Début du chargement des gages depuis Firestore...");
+            loadingIndicator.textContent = "Chargement des gages...";
+            loadingIndicator.style.display = 'block';
+
+            try {
+                // Chemin pour les données publiques des gages
+                const gagesCollectionRef = collection(db, `artifacts/${appId}/public/data/gages`);
+
+                // Récupère tous les documents de la collection 'gages'
+                const querySnapshot = await getDocs(gagesCollectionRef);
+                console.log("[loadGagesFromFirestore] QuerySnapshot obtenu. Nombre de documents:", querySnapshot.docs.length);
+
+                // Vérifie si les gages sont vides ou incomplets (par exemple, si la catégorie 'action' manque)
+                if (querySnapshot.empty || !querySnapshot.docs.some(doc => doc.id === 'action')) {
+                    console.warn("[loadGagesFromFirestore] Aucune donnée de gages trouvée ou incomplète dans Firestore. Initialisation des données par défaut...");
+                    await initializeDefaultGagesInFirestore();
+                    // Après l'initialisation, on les recharge pour s'assurer d'avoir les données fraîches
+                    const reQuerySnapshot = await getDocs(gagesCollectionRef);
+                    reQuerySnapshot.forEach(docSnap => {
+                        const data = docSnap.data();
+                        switch (docSnap.id) {
+                            case 'go_back': goBackGagesData = data.gages || []; break;
+                            case 'surprise': surpriseGagesData = data.gages || []; break;
+                            case 'action': actionGagesData = data.gages || []; break;
+                            case 'undress': undressGagesData = data.gages || []; break;
+                            case 'truth_dare': truthOrDareGagesData = data.gages || []; break;
+                            case 'massage_sensory': massageSensoryGagesData = data.gages || []; break;
+                            case 'role_play': rolePlayGagesData = data.gages || []; break;
+                            case 'sexual_positions': sexualPositionsGagesData = data.gages || []; break;
+                            case 'final_gage': finalGageData = data.gages || []; break;
+                            case 'vestiaire': vestiaireGagesData = data; break; // Vestiaire est un objet, pas un tableau
+                            default: console.warn(`[loadGagesFromFirestore] Catégorie de gage inconnue: ${docSnap.id}`);
+                        }
+                    });
+                } else {
+                    querySnapshot.forEach(docSnap => {
+                        const data = docSnap.data();
+                        switch (docSnap.id) {
+                            case 'go_back': goBackGagesData = data.gages || []; break;
+                            case 'surprise': surpriseGagesData = data.gages || []; break;
+                            case 'action': actionGagesData = data.gages || []; break;
+                            case 'undress': undressGagesData = data.gages || []; break;
+                            case 'truth_dare': truthOrDareGagesData = data.gages || []; break;
+                            case 'massage_sensory': massageSensoryGagesData = data.gages || []; break;
+                            case 'role_play': rolePlayGagesData = data.gages || []; break;
+                            case 'sexual_positions': sexualPositionsGagesData = data.gages || []; break;
+                            case 'final_gage': finalGageData = data.gages || []; break;
+                            case 'vestiaire': vestiaireGagesData = data; break; // Vestiaire est un objet, pas un tableau
+                            default: console.warn(`[loadGagesFromFirestore] Catégorie de gage inconnue: ${docSnap.id}`);
+                        }
+                    });
+                }
+                console.log("[loadGagesFromFirestore] Gages chargés depuis Firestore avec succès !");
+            } catch (error) {
+                console.error("[loadGagesFromFirestore] Erreur lors du chargement des gages depuis Firestore :", error);
+                showMessage("Impossible de charger les gages. Veuillez vérifier votre connexion ou les règles Firebase.");
+                // Fallback to empty arrays if Firestore fails
+                goBackGagesData = [];
+                surpriseGagesData = [];
+                actionGagesData = [];
+                undressGagesData = [];
+                truthOrDareGagesData = [];
+                massageSensoryGagesData = [];
+                rolePlayGagesData = [];
+                sexualPositionsGagesData = [];
+                finalGageData = [];
+                vestiaireGagesData = {};
+            } finally {
+                loadingIndicator.style.display = 'none';
+            }
+        }
+
+        /**
+         * Initialise les gages par défaut dans Firestore si les collections sont vides.
+         * Cette fonction est à appeler une seule fois ou quand les gages sont manquants.
+         */
+        async function initializeDefaultGagesInFirestore() {
+            // Vérifie si db est défini avant de l'utiliser
+            if (!db) {
+                console.error("[initializeDefaultGagesInFirestore] Firebase Firestore n'est pas initialisé. Impossible d'initialiser les gages par défaut.");
+                return;
+            }
+            console.log("[initializeDefaultGagesInFirestore] Initialisation des gages par défaut dans Firestore...");
+            const gagesCollectionRef = collection(db, `artifacts/${appId}/public/data/gages`);
+
+            const defaultGages = {
+                go_back: [
+                    { title: "Oups ! Retour en arrière !", text: "[joueur] recule de [steps] cases !", duration: "5s", accessories: [], imageUrl: "https://www.fullmoon.info/wp-content/uploads/2013/12/moonwalk_198x198.jpg" },
+                    { title: "Demi-tour !", text: "Le chemin est bloqué ! [joueur] doit reculer de [steps] cases.", duration: "5s", accessories: [], imageUrl: "https://www.fullmoon.info/wp-content/uploads/2013/12/moonwalk_198x198.jpg" },
+                    { title: "Faute de parcours !", text: "Tu as fait une erreur ! Recule de [steps] cases.", duration: "5s", accessories: [], imageUrl: "https://www.fullmoon.info/wp-content/uploads/2013/12/moonwalk_198x198.jpg" }
+                ],
+                surprise: [
+                    { title: "Surprise ! Fusion !", text: "Lorsque [joueur] arrive sur la case de [autreJoueur], les deux joueurs doivent s'embrasser passionnément pendant 30 secondes sans s'arrêter.", duration: "30s", accessories: [], imageUrl: "https://eqomcdn.com/content/photos/products/loveboxxx/40818/1625156791.LBX03-01.jpg" },
+                    { title: "Surprise ! Miroir !", text: "Lorsque [joueur] arrive sur la case de [autreJoueur], les deux joueurs doivent imiter les mouvements de l'autre pendant 1 minute, de manière sensuelle.", duration: "1min", accessories: [], imageUrl: "https://eqomcdn.com/content/photos/products/loveboxxx/40818/1625156791.LBX03-01.jpg" },
+                    { title: "Surprise ! Duo !", text: "Lorsque [joueur] arrive sur la case de [autreJoueur], les deux joueurs doivent se déshabiller mutuellement en même temps, jusqu'à ce qu'ils soient tous les deux en sous-vêtements.", duration: "1min", accessories: [], imageUrl: "https://eqomcdn.com/content/photos/products/loveboxxx/40818/1625156791.LBX03-01.jpg" },
+                    { title: "Surprise ! Chuchotements Entremêlés !", text: "Lorsque [joueur] arrive sur la case de [autreJoueur], chuchotez-vous mutuellement des mots doux et coquins à l'oreille en même temps pendant 30 secondes.", duration: "30s", accessories: [], imageUrl: "https://eqomcdn.com/content/photos/products/loveboxxx/40818/1625156791.LBX03-01.jpg" },
+                    { title: "Surprise ! Contact Peau à Peau !", text: "Lorsque [joueur] arrive sur la case de [autreJoueur], les deux joueurs doivent se coller l'un à l'autre, peau contre peau, pendant 1 minute.", duration: "1min", accessories: [], imageUrl: "https://eqomcdn.com/content/photos/products/loveboxxx/40818/1625156791.LBX03-01.jpg" }
+                ],
+                action: [
+                    { level: 1, title: "Action Douce 1", text: "Fais un compliment sincère à [autreJoueur].", duration: "10s", accessories: [], imageUrl: "https://thumbs.dreamstime.com/b/homme-caressant-une-femme-58084899.jpg" },
+                    { level: 1, title: "Action Douce 2", text: "Propose un câlin spontané à [autreJoueur].", duration: "15s", accessories: [], imageUrl: "https://thumbs.dreamstime.com/b/homme-caressant-une-femme-58084899.jpg" },
+                    { level: 1, title: "Action Douce 3", text: "Chuchote un secret amusant à l'oreille de [autreJoueur].", duration: "10s", accessories: [], imageUrl: "https://thumbs.dreamstime.com/b/homme-caressant-une-femme-58084899.jpg" },
+                    { level: 2, title: "Action Chaude 1", text: "Danse sensuellement pour [autreJoueur] pendant 30 secondes.", duration: "30s", accessories: [], imageUrl: "https://thumbs.dreamstime.com/b/homme-caressant-une-femme-58084899.jpg" },
+                    { level: 2, title: "Action Chaude 2", text: "Vole un baiser sur le cou de [autreJoueur].", duration: "5s", accessories: [], imageUrl: "https://thumbs.dreamstime.com/b/homme-caressant-une-femme-58084899.jpg" },
+                    { level: 2, title: "Action Chaude 3", text: "Fais un regard intense à [autreJoueur] sans cligner des yeux pendant 15 secondes.", duration: "15s", accessories: [], imageUrl: "https://thumbs.dreamstime.com/b/homme-caressant-une-femme-58084899.jpg" },
+                    { level: 3, title: "Action Très Chaude 1", text: "Échange un baiser langoureux avec [autreJoueur] pendant 20 secondes.", duration: "20s", accessories: [], imageUrl: "https://thumbs.dreamstime.com/b/homme-caressant-une-femme-58084899.jpg" },
+                    { level: 3, title: "Action Très Chaude 2", text: "Fais un strip-tease partiel (enlève un vêtement) pour [autreJoueur].", duration: "1min", accessories: [], imageUrl: "https://thumbs.dreamstime.com/b/homme-caressant-une-femme-58084899.jpg" },
+                    { level: 3, title: "Action Très Chaude 3", text: "Prends un selfie suggestif avec [autreJoueur].", duration: "30s", accessories: ["Smartphone"], imageUrl: "https://thumbs.dreamstime.com/b/homme-caressant-une-femme-58084899.jpg" },
+                    { level: 4, title: "Action Torride 1", text: "Donne un baiser passionné à [autreJoueur] sur une partie du corps inattendue.", duration: "15s", accessories: [], imageUrl: "https://thumbs.dreamstime.com/b/homme-caressant-une-femme-58084899.jpg" },
+                    { level: 4, title: "Action Torride 2", text: "Fais un lap dance pour [autreJoueur] pendant 1 minute.", duration: "1min", accessories: [], imageUrl: "https://thumbs.dreamstime.com/b/homme-caressant-une-femme-58084899.jpg" },
+                    { level: 4, title: "Action Torride 3", text: "Chuchote ton fantasme le plus secret à [autreJoueur].", duration: "30s", accessories: [], imageUrl: "https://thumbs.dreamstime.com/b/homme-caressant-une-femme-58084899.jpg" }
+                ],
+                undress: [
+                    { level: 1, type: 'clothes', title: "Déshabillage Doux 1", text: "[joueur] retire un vêtement de son choix.", duration: "15s", accessories: [], imageUrl: "https://previews.123rf.com/images/vadimgozhda/vadimgozhda1804/vadimgozhda180400072/99616711-passionate-woman-in-thongs-takes-off-stocking-in-front-of-man-lying-in-bed-striptease-sexual.jpg" },
+                    { level: 1, type: 'clothes', title: "Déshabillage Doux 2", text: "[joueur] retire un accessoire (montre, collier, chaussette).", duration: "10s", accessories: [], imageUrl: "https://previews.123rf.com/images/vadimgozhda/vadimgozhda1804/vadimgozhda180400072/99616711-passionate-woman-in-thongs-takes-off-stocking-in-front-of-man-lying-in-bed-striptease-sexual.jpg" },
+                    { level: 2, type: 'clothes', title: "Déshabillage Chaud 1", text: "[joueur] retire un vêtement de son choix, lentement.", duration: "20s", accessories: [], imageUrl: "https://previews.123rf.com/images/vadimgozhda/vadimgozhda1804/vadimgozhda180400072/99616711-passionate-woman-in-thongs-takes-off-stocking-in-front-of-man-lying-in-bed-striptease-sexual.jpg" },
+                    { level: 2, type: 'clothes', title: "Déshabillage Chaud 2", text: "[joueur] retire un vêtement que [autreJoueur] choisit (pas les sous-vêtements !).", duration: "20s", accessories: [], imageUrl: "https://previews.123rf.com/images/vadimgozhda/vadimgozhda1804/vadimgozhda180400072/99616711-passionate-woman-in-thongs-takes-off-stocking-in-front-of-man-lying-in-bed-striptease-sexual.jpg" },
+                    { level: 3, type: 'clothes', title: "Déshabillage Très Chaud 1", text: "[joueur] retire un vêtement en faisant monter le désir de [autreJoueur].", duration: "30s", accessories: [], imageUrl: "https://previews.123rf.com/images/vadimgozhda/vadimgozhda1804/vadimgozhda180400072/99616711-passionate-woman-in-thongs-takes-off-stocking-in-front-of-man-lying-in-bed-striptease-sexual.jpg" },
+                    { level: 3, type: 'underwear', title: "Déshabillage Très Chaud 2", text: "[joueur] retire un sous-vêtement de son choix.", duration: "30s", accessories: [], imageUrl: "https://previews.123rf.com/images/vadimgozhda/vadimgozhda1804/vadimgozhda180400072/99616711-passionate-woman-in-thongs-takes-off-stocking-in-front-of-man-lying-in-bed-striptease-sexual.jpg" },
+                    { level: 4, type: 'clothes', title: "Déshabillage Torride 1", text: "[joueur] retire un vêtement en regardant [autreJoueur] dans les yeux.", duration: "45s", accessories: [], imageUrl: "https://previews.123rf.com/images/vadimgozhda/vadimgozhda1804/vadimgozhda180400072/99616711-passionate-woman-in-thongs-takes-off-stocking-in-front-of-man-lying-in-bed-striptease-sexual.jpg" },
+                    { level: 4, type: 'underwear', title: "Déshabillage Torride 2", text: "[joueur] retire son dernier sous-vêtement (s'il en reste) ou un autre sous-vêtement.", duration: "45s", accessories: [], imageUrl: "https://previews.123rf.com/images/vadimgozhda/vadimgozhda1804/vadimgozhda180400072/99616711-passionate-woman-in-thongs-takes-off-stocking-in-front-of-man-lying-in-bed-striptease-sexual.jpg" }
+                ],
+                truth_dare: [
+                    { level: 1, title: "Vérité Douce 1", text: "Quel est ton souvenir préféré de notre premier baiser ?", duration: "30s", accessories: [], imageUrl: "https://img.pixers.pics/pho_wat(s3:700/FO/60/36/92/01/700_FO60369201_feed8d48e19113dfceccfac14af3eef9.jpg,700,700,cms:2018/10/5bd1b6b8d04b8_220x50-watermark.png,over,480,650,jpg)/posters-gros-closen-d-39-une-femme-levres-avec-le-doigt-pour-demander-le-silence.jpg.jpg" },
+                    { level: 1, title: "Ose Doux 1", text: "Fais-moi un clin d'œil séducteur.", duration: "5s", accessories: [], imageUrl: "https://www.union.fr/wp-content/uploads/2019/01/gettyimages-97538561.jpg" },
+                    { level: 1, title: "Vérité Douce 2", text: "Quelle est la chose la plus mignonne que j'aie jamais faite ?", duration: "30s", accessories: [], imageUrl: "https://img.pixers.pics/pho_wat(s3:700/FO/60/36/92/01/700_FO60369201_feed8d48e19113dfceccfac14af3eef9.jpg,700,700,cms:2018/10/5bd1b6b8d04b8_220x50-watermark.png,over,480,650,jpg)/posters-gros-closen-d-39-une-femme-levres-avec-le-doigt-pour-demander-le-silence.jpg.jpg" },
+                    { level: 1, title: "Ose Doux 2", text: "Tiens ma main pendant le reste du tour.", duration: "1min", accessories: [], imageUrl: "https://www.union.fr/wp-content/uploads/2019/01/gettyimages-97538561.jpg" },
+                    { level: 1, title: "Vérité Douce 3", text: "Si tu pouvais changer une chose chez moi, ce serait quoi (gentiment) ?", duration: "45s", accessories: [], imageUrl: "https://img.pixers.pics/pho_wat(s3:700/FO/60/36/92/01/700_FO60369201_feed8d48e19113dfceccfac14af3eef9.jpg,700,700,cms:2018/10/5bd1b6b8d04b8_220x50-watermark.png,over,480,650,jpg)/posters-gros-closen-d-39-une-femme-levres-avec-le-doigt-pour-demander-le-silence.jpg.jpg" },
+                    { level: 2, title: "Vérité Chaude 1", text: "Quel est ton endroit préféré pour un baiser (sur le corps) ?", duration: "30s", accessories: [], imageUrl: "https://img.pixers.pics/pho_wat(s3:700/FO/60/36/92/01/700_FO60369201_feed8d48e19113dfceccfac14af3eef9.jpg,700,700,cms:2018/10/5bd1b6b8d04b8_220x50-watermark.png,over,480,650,jpg)/posters-gros-closen-d-39-une-femme-levres-avec-le-doigt-pour-demander-le-silence.jpg.jpg" },
+                    { level: 2, title: "Ose Chaud 1", text: "Chuchote-moi quelque chose de coquin à l'oreille.", duration: "10s", accessories: [], imageUrl: "https://www.union.fr/wp-content/uploads/2019/01/gettyimages-97538561.jpg" },
+                    { level: 2, title: "Vérité Chaude 2", text: "Quel est le compliment le plus sexy que tu m'aies jamais fait ou voulu me faire ?", duration: "45s", accessories: [], imageUrl: "https://img.pixers.pics/pho_wat(s3:700/FO/60/36/92/01/700_FO60369201_feed8d48e19113dfceccfac14af3eef9.jpg,700,700,cms:2018/10/5bd1b6b8d04b8_220x50-watermark.png,over,480,650,jpg)/posters-gros-closen-d-39-une-femme-levres-avec-le-doigt-pour-demander-le-silence.jpg.jpg" },
+                    { level: 2, title: "Ose Chaud 2", text: "Fais-moi un bisou qui me donne des frissons.", duration: "10s", accessories: [], imageUrl: "https://www.union.fr/wp-content/uploads/2019/01/gettyimages-97538561.jpg" },
+                    { level: 3, title: "Vérité Très Chaude 1", text: "Quel est un fantasme que tu n'as jamais osé partager avec moi ?", duration: "1min", accessories: [], imageUrl: "https://img.pixers.pics/pho_wat(s3:700/FO/60/36/92/01/700_FO60369201_feed8d48e19113dfceccfac14af3eef9.jpg,700,700,cms:2018/10/5bd1b6b8d04b8_220x50-watermark.png,over,480,650,jpg)/posters-gros-closen-d-39-une-femme-levres-avec-le-doigt-pour-demander-le-silence.jpg.jpg" },
+                    { level: 3, title: "Ose Très Chaud 1", text: "Lèche un morceau de chocolat sur mon bras.", duration: "30s", accessories: ["Chocolat"], imageUrl: "https://www.union.fr/wp-content/uploads/2019/01/gettyimages-97538561.jpg" },
+                    { level: 3, title: "Vérité Très Chaude 2", text: "Quelle est la chose la plus coquine que tu aies jamais faite en public ?", duration: "1min", accessories: [], imageUrl: "https://img.pixers.pics/pho_wat(s3:700/FO/60/36/92/01/700_FO60369201_feed8d48e19113dfceccfac14af3eef9.jpg,700,700,cms:2018/10/5bd1b6b8d04b8_220x50-watermark.png,over,480,650,jpg)/posters-gros-closen-d-39-une-femme-levres-avec-le-doigt-pour-demander-le-silence.jpg.jpg" },
+                    { level: 4, title: "Vérité Torride 1", text: "Décris-moi en détail ce que tu aimerais que je te fasse ce soir.", duration: "2min", accessories: [], imageUrl: "https://img.pixers.pics/pho_wat(s3:700/FO/60/36/92/01/700_FO60369201_feed8d48e19113dfceccfac14af3eef9.jpg,700,700,cms:2018/10/5bd1b6b8d04b8_220x50-watermark.png,over,480,650,jpg)/posters-gros-closen-d-39-une-femme-levres-avec-le-doigt-pour-demander-le-silence.jpg.jpg" },
+                    { level: 4, title: "Ose Torride 1", text: "Enlève un vêtement de [autreJoueur] avec ta bouche (si possible).", duration: "1min", accessories: [], imageUrl: "https://www.union.fr/wp-content/uploads/2019/01/gettyimages-97538561.jpg" },
+                    { level: 4, title: "Vérité Torride 2", text: "Quelle est ta position sexuelle préférée et pourquoi ?", duration: "1min", accessories: [], imageUrl: "https://img.pixers.pics/pho_wat(s3:700/FO/60/36/92/01/700_FO60369201_feed8d48e19113dfceccfac14af3eef9.jpg,700,700,cms:2018/10/5bd1b6b8d04b8_220x50-watermark.png,over,480,650,jpg)/posters-gros-closen-d-39-une-femme-levres-avec-le-doigt-pour-demander-le-silence.jpg.jpg" }
+                ],
+                massage_sensory: [
+                    { level: 1, title: "Massage Doux 1", text: "Masse les mains de [autreJoueur] pendant 1 minute.", duration: "1min", accessories: [], imageUrl: "https://img.freepik.com/photos-gratuite/homme-masser-dos-femme_23-2148531257.jpg" },
+                    { level: 1, title: "Sensation Douce 1", text: "Effleure délicatement le bras de [autreJoueur] du bout des doigts pendant 30 secondes.", duration: "30s", accessories: [], imageUrl: "https://img.freepik.com/photos-gratuite/homme-masser-dos-femme_23-2148531257.jpg" },
+                    { level: 1, title: "Massage Doux 2", text: "Caresses les cheveux de [autreJoueur] pendant 1 minute.", duration: "1min", accessories: [], imageUrl: "https://img.freepik.com/photos-gratuite/homme-masser-dos-femme_23-2148531257.jpg" },
+                    { level: 1, title: "Sensation Douce 2", text: "Souffle doucement dans le cou de [autreJoueur].", duration: "15s", accessories: [], imageUrl: "https://img.freepik.com/photos-gratuite/homme-masser-dos-femme_23-2148531257.jpg" },
+                    { level: 2, title: "Massage Chaud 1", text: "Masse les épaules de [autreJoueur] pendant 1 minute.", duration: "1min", accessories: [], imageUrl: "https://img.freepik.com/photos-gratuite/homme-masser-dos-femme_23-2148531257.jpg" },
+                    { level: 2, title: "Sensation Chaude 1", text: "Chatouille légèrement [autreJoueur] sur une zone sensible (pieds, cou, flancs) pendant 30 secondes.", duration: "30s", accessories: [], imageUrl: "https://img.freepik.com/photos-gratuite/homme-masser-dos-femme_23-2148531257.jpg" },
+                    { level: 2, title: "Massage Chaud 2", text: "Caresses les cuisses de [autreJoueur] par-dessus les vêtements pendant 1 minute.", duration: "1min", accessories: [], imageUrl: "https://img.freepik.com/photos-gratuite/homme-masser-dos-femme_23-2148531257.jpg" },
+                    { level: 3, title: "Massage Très Chaud 1", text: "Masse la nuque et le haut du dos de [autreJoueur] avec de l'huile de massage pendant 2 minutes.", duration: "2min", accessories: ["Huile de massage"], imageUrl: "https://img.freepik.com/photos-gratuite/homme-masser-dos-femme_23-2148531257.jpg" },
+                    { level: 3, title: "Sensation Très Chaude 1", text: "Passe un glaçon sur le cou et la poitrine de [autreJoueur] pendant 30 secondes.", duration: "30s", accessories: ["Glaçon"], imageUrl: "https://img.freepik.com/photos-gratuite/homme-masser-dos-femme_23-2148531257.jpg" },
+                    { level: 3, title: "Massage Très Chaud 2", text: "Masse les pieds de [autreJoueur] avec tes mains ou tes pieds pendant 1 minute.", duration: "1min", accessories: [], imageUrl: "https://img.freepik.com/photos-gratuite/homme-masser-dos-femme_23-2148531257.jpg" },
+                    { level: 4, title: "Massage Torride 1", text: "Masse les fesses de [autreJoueur] par-dessus les sous-vêtements pendant 2 minutes.", duration: "2min", accessories: [], imageUrl: "https://img.freepik.com/photos-gratuite/homme-masser-dos-femme_23-2148531257.jpg" },
+                    { level: 4, title: "Sensation Torride 1", text: "Utilise une plume ou un pinceau pour caresser les zones sensibles de [autreJoueur] pendant 1 minute.", duration: "1min", accessories: ["Plume/Pinceau"], imageUrl: "https://img.freepik.com/photos-gratuite/homme-masser-dos-femme_23-2148531257.jpg" },
+                    { level: 4, title: "Massage Torride 2", text: "Masse l'intérieur des cuisses de [autreJoueur] avec de l'huile pendant 2 minutes.", duration: "2min", accessories: ["Huile de massage"], imageUrl: "https://img.freepik.com/photos-gratuite/homme-masser-dos-femme_23-2148531257.jpg" }
+                ],
+                role_play: [
+                    { level: 2, title: "Jeu de Rôle Chaud 1", text: "Fais semblant d'être un/une parfait(e) inconnu(e) qui essaie de séduire [autreJoueur] avec 3 phrases.", duration: "1min", accessories: [], imageUrl: "https://previews.123rf.com/images/wisky/wisky1409/wisky140900126/31530661-sexy-police-officers-isolated-on-white-background.jpg" },
+                    { level: 2, title: "Jeu de Rôle Chaud 2", text: "Incarne un personnage de film romantique et fais une déclaration d'amour à [autreJoueur].", duration: "1min", accessories: [], imageUrl: "https://previews.123rf.com/images/wisky/wisky1409/wisky140900126/31530661-sexy-police-officers-isolated-on-white-background.jpg" },
+                    { level: 3, title: "Jeu de Rôle Très Chaud 1", text: "Pendant 5 minutes, [joueur] est ton maître/maîtresse et tu dois obéir à ses ordres (simples et non dangereux).", duration: "5min", accessories: [], imageUrl: "https://previews.123rf.com/images/wisky/wisky1409/wisky140900126/31530661-sexy-police-officers-isolated-on-white-background.jpg" },
+                    { level: 3, title: "Jeu de Rôle Très Chaud 2", text: "Fais semblant d'être un/une espion(ne) sexy qui doit récupérer des informations auprès de [autreJoueur] par la séduction.", duration: "2min", accessories: [], imageUrl: "https://previews.123rf.com/images/wisky/wisky1409/wisky140900126/31530661-sexy-police-officers-isolated-on-white-background.jpg" },
+                    { level: 3, title: "Jeu de Rôle Très Chaud 3", text: "Incarne un personnage de ton choix et séduis [autreJoueur] pendant 2 minutes.", duration: "2min", accessories: [], imageUrl: "https://previews.123rf.com/images/wisky/wisky1409/wisky140900126/31530661-sexy-police-officers-isolated-on-white-background.jpg" },
+                    { level: 4, title: "Jeu de Rôle Torride 1", text: "Fais semblant d'être un/une strip-teaseur/euse privé(e) pour [autreJoueur] pendant 2 minutes.", duration: "2min", accessories: [], imageUrl: "https://previews.123rf.com/images/wisky/wisky1409/wisky140900126/31530661-sexy-police-officers-isolated-on-white-background.jpg" },
+                    { level: 4, title: "Jeu de Rôle Torride 2", text: "Incarne un personnage dominant/soumis de ton choix et explore cette dynamique avec [autreJoueur] pendant 3 minutes.", duration: "3min", accessories: [], imageUrl: "https://previews.123rf.com/images/wisky/wisky1409/wisky140900126/31530661-sexy-police-officers-isolated-on-white-background.jpg" },
+                    { level: 4, title: "Jeu de Rôle Torride 3", text: "Inventez ensemble un scénario coquin et incarnez-le pendant 5 minutes.", duration: "5min", accessories: [], imageUrl: "https://previews.123rf.com/images/wisky/wisky1409/wisky140900126/31530661-sexy-police-officers-isolated-on-white-background.jpg" }
+                ],
+                sexual_positions: [
+                    { title: "La Cuillère Coquine", text: "Allongez-vous en position de cuillère, mais avec un contact peau à peau maximal.", imageUrl: "https://sf1.doctissimo.fr/wp-content/uploads/doctissimo/2024/06/kamasutra-acrobatique-20-positions-spectaculaires-c09ac6e842b31429.jpeg", duration: "5min+", accessories: [] },
+                    { title: "Le Baiser Papillon", text: "Face à face, vos corps collés, échangez des baisers doux et légers sur tout le visage et le cou.", imageUrl: "https://sf1.doctissimo.fr/wp-content/uploads/doctissimo/2024/06/kamasutra-acrobatique-20-positions-spectaculaires-c09ac6e842b31429.jpeg", duration: "3min", accessories: [] },
+                    { title: "Le Nœud Amoureux", text: "Enlacez vos jambes et vos bras de manière à former un nœud, en vous serrant fort l'un contre l'autre.", imageUrl: "https://sf1.doctissimo.fr/wp-content/uploads/doctissimo/2024/06/kamasutra-acrobatique-20-positions-spectaculaires-c09ac6e842b31429.jpeg", duration: "2min", accessories: [] },
+                    { title: "La Danse Lente Intime", text: "Dansez très lentement, corps contre corps, en vous murmurant des mots doux à l'oreille.", imageUrl: "https://sf1.doctissimo.fr/wp-content/uploads/doctissimo/2024/06/kamasutra-acrobatique-20-positions-spectaculaires-c09ac6e842b31429.jpeg", duration: "3min", accessories: [] },
+                    { title: "Le Regard Profond", text: "Asseyez-vous l'un en face de l'autre, genoux contre genoux, et regardez-vous intensément dans les yeux sans parler pendant 2 minutes.", imageUrl: "https://sf1.doctissimo.fr/wp-content/uploads/doctissimo/2024/06/kamasutra-acrobatique-20-positions-spectaculaires-c09ac6e842b31429.jpeg", duration: "2min", accessories: [] },
+                    { title: "L'Étreinte Passionnée", text: "Serrez-vous dans les bras très fort, en vous balançant doucement, comme si vous ne vouliez plus jamais vous lâcher.", imageUrl: "https://sf1.doctissimo.fr/wp-content/uploads/doctissimo/2024/06/kamasutra-acrobatique-20-positions-spectaculaires-c09ac6e842b31429.jpeg", duration: "1min", accessories: [] },
+                    { title: "Le Câlin Inversé", text: "Asseyez-vous l'un sur l'autre, dos à dos, et penchez-vous pour vous câliner par-dessus l'épaule.", imageUrl: "https://sf1.doctissimo.fr/wp-content/uploads/doctissimo/2024/06/kamasutra-acrobatique-20-positions-spectaculaires-c09ac6e842b31429.jpeg", duration: "2min", accessories: [] },
+                    { title: "Le Baiser de l'Araignée", text: "Allongez-vous sur le dos, face à face, et essayez de vous embrasser en utilisant uniquement vos langues, sans bouger vos têtes.", imageUrl: "https://sf1.doctissimo.fr/wp-content/uploads/doctissimo/2024/06/kamasutra-acrobatique-20-positions-spectaculaires-c09ac6e842b31429.jpeg", duration: "1min", accessories: [] },
+                    { title: "Le Pont Humain", text: "L'un est allongé sur le dos, l'autre se penche au-dessus, les mains et les pieds au sol, pour un baiser suspendu.", imageUrl: "https://sf1.doctissimo.fr/wp-content/uploads/doctissimo/2024/06/kamasutra-acrobatique-20-positions-spectaculaires-c09ac6e842b31429.jpeg", duration: "1min", accessories: [] }
+                ],
+                final_gage: [
+                    { title: "Le Triomphe des Amoureux !", text: "[joueur] a gagné ! Pour célébrer, [joueur] peut choisir n'importe quel gage (même un passé) pour [autreJoueur], qui doit l'exécuter avec passion !", duration: "À la discrétion du vainqueur", accessories: [], imageUrl: "https://pics.porn300.com/thumbs/4/9/d/1/d/49d1d9ede7c1d6f2edde98237892d4db6539482c.mp4/improved/23.jpg" },
+                    { title: "Le Baiser de la Victoire !", text: " [joueur] a gagné ! Les deux joueurs doivent échanger un baiser langoureux et infini, jusqu'à ce que l'un d'eux ne puisse plus respirer (presque) !", duration: "Jusqu'à l'épuisement", accessories: [], imageUrl: "https://pics.porn300.com/thumbs/4/9/d/1/d/49d1d9ede7c1d6f2edde98237892d4db6539482c.mp4/improved/23.jpg" },
+                    { title: "Nuit Blanche de Plaisir !", text: "[joueur] a gagné ! Les deux joueurs doivent se promettre une nuit entière de plaisirs et d'explorations mutuelles, sans limites !", duration: "Toute la nuit", accessories: [], imageUrl: "https://pics.porn300.com/thumbs/4/9/d/1/d/49d1d9ede7c1d6f2edde98237892d4db6539482c.mp4/improved/23.jpg" },
+                    { title: "Le Déshabillage Suprême !", text: "[joueur] a gagné ! [autreJoueur] doit retirer le dernier vêtement ou sous-vêtement qu'il/elle porte, lentement et sensuellement, sous le regard de [joueur] !", duration: "1min", accessories: [], imageUrl: "https://pics.porn300.com/thumbs/4/9/d/1/d/49d1d9ede7c1d6f2edde98237892d4db6539482c.mp4/improved/23.jpg" }
+                ],
+                vestiaire: {
+                    clothes: {
+                        title: "Vestiaire des Vêtements !",
+                        text: "Le rideau se lève ! [joueur], c'est l'heure de te révéler ! Exécute un déshabillage torride pour [autreJoueur], ne gardant que tes dessous. Fais monter la température !",
+                        imageUrl: "https://previews.123rf.com/images/vadimgozhda/vadimgozhda1804/vadimgozhda180400072/99616711-passionate-woman-in-thongs-takes-off-stocking-in-front-of-man-lying-in-bed-striptease-sexual.jpg",
+                        duration: "Immédiat",
+                        accessories: []
+                    },
+                    underwear: {
+                        title: "Vestiaire Intime !",
+                        text: "Plus rien à cacher, [joueur] ! Termine ton spectacle pour [autreJoueur] en te libérant de tes derniers dessous. L'intimité est à son comble !",
+                        imageUrl: "https://previews.123rf.com/images/vadimgozhda/vadimgozhda1804/vadimgozhda180400072/99616711-passionate-woman-in-thongs-takes-off-stocking-in-front-of-man-lying-in-bed-striptease-sexual.jpg",
+                        duration: "Immédiat",
+                        accessories: []
+                    }
+                }
+            };
+
+            for (const category in defaultGages) {
+                const docRef = doc(gagesCollectionRef, category);
+                if (category === 'vestiaire') {
+                    await setDoc(docRef, defaultGages[category]); // Pour l'objet vestiaire
+                } else {
+                    await setDoc(docRef, { gages: defaultGages[category] }); // Pour les tableaux
+                }
+                console.log(`[initializeDefaultGagesInFirestore] Gages par défaut pour la catégorie '${category}' initialisés.`);
+            }
+            console.log("[initializeDefaultGagesInFirestore] Tous les gages par défaut ont été initialisés dans Firestore.");
+        }
+
+
+        // --- Gestion des événements ---
+
+        // Écouteur d'événement pour le bouton "Commencer le jeu !"
+        startGameButton.addEventListener('click', async () => {
+            console.log("[startGameButton] Bouton 'Commencer le jeu !' cliqué.");
+            // Vérifie si Firebase est initialisé avant de continuer
+            if (!app || !auth || !db) {
+                showMessage("Le jeu ne peut pas démarrer : Firebase n'est pas correctement configuré. Veuillez vérifier la console pour plus de détails et mettre à jour votre 'firebaseConfig' si tu es en local.");
+                return;
+            }
+
+            player1Name = player1NameInput.value.trim();
+            player2Name = player2NameInput.value.trim();
+            player1Clothes = parseInt(player1ClothesInput.value, 10);
+            player1Underwear = parseInt(player1UnderwearInput.value, 10);
+            player2Clothes = parseInt(player2ClothesInput.value, 10);
+            player2Underwear = parseInt(player2UnderwearInput.value, 10);
+
+
+            if (player1Name && player2Name && !isNaN(player1Clothes) && !isNaN(player1Underwear) && !isNaN(player2Clothes) && !isNaN(player2Underwear)) {
+                // Validation des nombres de vêtements
+                if (player1Clothes < 0 || player1Underwear < 0 || player2Clothes < 0 || player2Underwear < 0) {
+                    showMessage("Le nombre de vêtements et sous-vêtements ne peut pas être négatif.");
+                    return;
+                }
+
+                // Authentification Firebase
+                loadingIndicator.style.display = 'block'; // Affiche l'indicateur de chargement
+                startGameButton.disabled = true; // Désactive le bouton pendant le chargement
+                adminModeButton.disabled = true; // Désactive le bouton admin aussi
+
+                try {
+                    console.log("[startGameButton] Tentative d'authentification Firebase...");
+                    // Pour l'exécution locale, on utilise l'authentification anonyme.
+                    await signInAnonymously(auth);
+
+                    userId = auth.currentUser.uid; // Récupère l'UID de l'utilisateur
+                    console.log("[startGameButton] Authentification Firebase réussie. User ID:", userId);
+
+                    // Définit la référence au document Firestore pour cette partie
+                    gameDocRef = doc(db, `artifacts/${appId}/users/${userId}/game_state/current_game`);
+                    console.log("[startGameButton] Référence au document de jeu:", gameDocRef.path);
+
+                    // Charge les gages depuis Firestore avant de charger l'état du jeu
+                    await loadGagesFromFirestore();
+                    console.log("[startGameButton] Gages chargés. Tentative de chargement de l'état du jeu...");
+
+                    // Tente de charger l'état du jeu existant
+                    const docSnap = await getDoc(gameDocRef);
+                    if (docSnap.exists()) {
+                        const savedState = docSnap.data();
+                        player1Name = savedState.player1Name;
+                        player2Name = savedState.player2Name;
+                        player1Position = savedState.player1Position;
+                        player2Position = savedState.player2Position;
+                        player1Clothes = savedState.player1Clothes;
+                        player1Underwear = savedState.player1Underwear;
+                        player2Clothes = savedState.player2Clothes;
+                        player2Underwear = savedState.player2Underwear;
+                        currentPlayer = savedState.currentPlayer;
+                        selectedMaleEmoji = savedState.selectedMaleEmoji;
+                        selectedFemaleEmoji = savedState.selectedFemaleEmoji;
+
+                        showMessage("Partie précédente chargée !");
+                        console.log("[startGameButton] Partie précédente chargée:", savedState);
+                    } else {
+                        // Si pas de partie sauvegardée, sauvegarde l'état initial
+                        await setDoc(gameDocRef, {
+                            player1Name,
+                            player2Name,
+                            player1Position,
+                            player2Position,
+                            player1Clothes,
+                            player1Underwear,
+                            player2Clothes,
+                            player2Underwear,
+                            currentPlayer,
+                            selectedMaleEmoji,
+                            selectedFemaleEmoji
+                        });
+                        showMessage("Nouvelle partie commencée et sauvegardée !");
+                        console.log("[startGameButton] Nouvelle partie commencée et sauvegardée.");
+                    }
+
+                    // Met à jour les pions avec les emojis sélectionnés
+                    player1Token.textContent = selectedMaleEmoji;
+                    player2Token.textContent = selectedFemaleEmoji;
+                    // Affiche le nom du premier joueur
+                    currentPlayerNameDisplay.textContent = currentPlayer === 1 ? player1Name : player2Name;
+
+                    // Bascule l'affichage de l'écran de démarrage à l'écran de jeu
+                    startScreen.style.display = 'none';
+                    gameScreen.style.display = 'flex';
+                    gameReady = true; // Le jeu est prêt
+                    createBoard(); // Génère le plateau
+                    updateGameAmbiance(Math.max(player1Position, player2Position)); // Initialise l'ambiance
+                    updateTheme(); // Applique le thème initial
+                    console.log("[startGameButton] Jeu démarré avec succès.");
+
+                } catch (error) {
+                    console.error("[startGameButton] Erreur d'authentification ou de chargement Firebase :", error);
+                    showMessage("Erreur de connexion à Firebase. Veuillez réessayer ou vérifier votre configuration.");
+                    startGameButton.disabled = false; // Réactive le bouton en cas d'erreur
+                    adminModeButton.disabled = false;
+                } finally {
+                    loadingIndicator.style.display = 'none'; // Cache l'indicateur de chargement
+                }
+
+            } else {
+                // Utilise une alerte simple pour les prénoms manquants
+                showMessage("Veuillez saisir les prénoms des deux joueurs, choisir leurs emojis et entrer le nombre de vêtements/sous-vêtements pour commencer.");
+            }
+        });
+
+        // Fonction pour sauvegarder l'état du jeu dans Firestore
+        async function saveGameState() {
+            if (!gameDocRef) {
+                console.warn("[saveGameState] gameDocRef n'est pas défini. Impossible de sauvegarder l'état du jeu.");
+                return;
+            }
+            try {
+                await updateDoc(gameDocRef, {
+                    player1Name,
+                    player2Name,
+                    player1Position,
+                    player2Position,
+                    player1Clothes,
+                    player1Underwear,
+                    player2Clothes,
+                    player2Underwear,
+                    currentPlayer,
+                    selectedMaleEmoji,
+                    selectedFemaleEmoji
+                });
+                console.log("[saveGameState] État du jeu sauvegardé avec succès !");
+            } catch (error) {
+                console.error("[saveGameState] Erreur lors de la sauvegarde de l'état du jeu :", error);
+            }
+        }
+
+        // Écouteur d'événement pour le bouton "Lancer le dé !"
+        rollDiceButton.addEventListener('click', async () => {
+            if (!gameReady || isMoving) return;
+
+            let rollCount = 0;
+            const animationDuration = 1000; // Durée de l'animation en ms
+            const intervalTime = 100; // Intervalle entre chaque changement de valeur
+
+            const animationInterval = setInterval(() => {
+                const randomValue = Math.floor(Math.random() * 6) + 1;
+                displayDiceFace(randomValue); // Afficher une face aléatoire pendant l'animation
+                rollCount++;
+                if (rollCount * intervalTime >= animationDuration) {
+                    clearInterval(animationInterval);
+                    const diceResult = Math.floor(Math.random() * 6) + 1; // Résultat final du dé
+                    displayDiceFace(diceResult); // Afficher la face finale du dé
+
+                    // Détermine la nouvelle position du joueur (index du tableau)
+                    let currentPlayersPosition = currentPlayer === 1 ? player1Position : player2Position;
+                    let potentialNewPosition = currentPlayersPosition + diceResult;
+
+                    // Appelle la fonction générique de gestion de tour
+                    handlePlayerTurn(potentialNewPosition);
+                }
+            }, intervalTime);
+            // La sauvegarde se fait après le handlePlayerTurn pour s'assurer que toutes les mises à jour sont faites
+            // avant de sauvegarder.
+        });
+
+        // Écouteur d'événement UNIQUE pour le bouton "Gage terminé" dans la pop-up
+        gagDoneButton.addEventListener('click', async () => {
+            hideGag();
+            await saveGameState(); // Sauvegarde l'état après avoir terminé un gage
+        });
+
+        // Écouteur d'événement pour le bouton "Recommencer une nouvelle partie"
+        restartGameButton.addEventListener('click', async () => {
+            hideVictoryScreen();
+            resetGame();
+            // Supprime l'ancienne partie de Firestore si l'utilisateur redémarre
+            if (gameDocRef) {
+                try {
+                    // Utilise setDoc avec un objet vide pour effacer le contenu du document
+                    // ou deleteDoc si tu veux supprimer complètement le document.
+                    // setDoc({}, { merge: false }) est plus sûr pour "vider" sans supprimer le document lui-même.
+                    await setDoc(gameDocRef, {
+                        player1Name: '', player2Name: '',
+                        player1Position: startCaseIndex, player2Position: startCaseIndex,
+                        player1Clothes: 0, player1Underwear: 0,
+                        player2Clothes: 0, player2Underwear: 0,
+                        currentPlayer: 1,
+                        selectedMaleEmoji: '🎩', selectedFemaleEmoji: '💋'
+                    });
+                    console.log("[restartGameButton] Ancienne partie réinitialisée dans Firestore.");
+                } catch (error) {
+                    console.error("[restartGameButton] Erreur lors de la réinitialisation de l'ancienne partie :", error);
+                }
+            }
+            // Pas besoin de saveGameState ici, car resetGame initialise les valeurs et le setDoc ci-dessus les met à zéro.
+        });
+
+        // Écouteur d'événement pour le bouton "Terminer la session"
+        endSessionButton.addEventListener('click', () => {
+            hideVictoryScreen();
+            resetGame();
+            // Pas de sauvegarde ici, car la session est terminée
+        });
+
+        // Écouteur d'événement pour le bouton "Débogage" (toggle)
+        toggleDebugButton.addEventListener('click', () => {
+            if (debugControls.style.display === 'flex') {
+                debugControls.style.display = 'none';
+            } else {
+                debugControls.style.display = 'flex';
+            }
+        });
+
+        // Écouteur d'événement pour le bouton "Déplacer à la case" (débogage)
+        manualMoveButton.addEventListener('click', async () => {
+            if (!gameReady || isMoving) return;
+
+            const targetVisualSquare = parseInt(targetSquareInput.value, 10);
+
+            if (isNaN(targetVisualSquare) || targetVisualSquare < 1 || targetVisualSquare > totalOriginalCases) {
+                showMessage(`Veuillez entrer un numéro de case valide entre 1 et ${totalOriginalCases}.`);
+                return;
+            }
+
+            // Convertit le numéro de case visuel en index de tableau
+            let targetArrayIndex = targetVisualSquare;
+            if (targetVisualSquare >= 31) { // Si la case visuelle est 31 ou plus, on a passé le premier vestiaire
+                targetArrayIndex += 1;
+            }
+            if (targetVisualSquare >= 61) { // Si la case visuelle est 61 ou plus, on a passé le deuxième vestiaire
+                targetArrayIndex += 1;
+            }
+
+            // Gère le cas où l'utilisateur entre un numéro de case qui correspondrait à un vestiaire
+            // (Bien que l'input min/max le limite aux cases numérotées, c'est une sécurité)
+            if (targetArrayIndex === vestiaire1Index || targetArrayIndex === vestiaire2Index) {
+                 showMessage(`La case ${targetVisualSquare} est un vestiaire. Veuillez entrer un numéro de case numérotée.`);
+                 return;
+            }
+
+            // Appelle la fonction générique de gestion de tour
+            await handlePlayerTurn(targetArrayIndex); // Attendre la fin du tour
+            await saveGameState(); // Sauvegarde l'état après le mouvement manuel
+        });
+
+        // --- Admin Mode Logic ---
+        const ADMIN_PASSWORD = "admin"; // Mot de passe simple pour le mode admin (À NE PAS UTILISER EN PRODUCTION !)
+
+        adminModeButton.addEventListener('click', () => {
+            adminPopup.style.display = 'flex';
+            setTimeout(() => adminPopup.classList.add('active'), 10);
+            adminPanelContent.style.display = 'none'; // Cache le contenu admin par défaut
+            adminPasswordInput.value = ''; // Réinitialise le champ de mot de passe
+        });
+
+        adminCloseButton.addEventListener('click', () => {
+            adminPopup.classList.remove('active');
+            setTimeout(() => adminPopup.style.display = 'none', 300);
+        });
+
+        adminLoginButton.addEventListener('click', () => {
+            const enteredPassword = adminPasswordInput.value;
+            if (enteredPassword === ADMIN_PASSWORD) {
+                showMessage("Connexion administrateur réussie !");
+                adminPasswordInput.style.display = 'none';
+                adminLoginButton.style.display = 'none';
+                adminPanelContent.style.display = 'block'; // Affiche le panneau admin
+            } else {
+                showMessage("Mot de passe incorrect.");
+                adminPasswordInput.value = '';
+            }
+        });
+
+        // Placeholder for future admin functionality
+        addGageButton.addEventListener('click', () => {
+            showMessage("Fonctionnalité d'ajout de gage à implémenter ici !");
+        });
+
+
+        // Définition des plages de niveaux (doit être après les constantes globales comme vestiaire1Index etc.)
+        // Ces plages sont utilisées pour l'assignation aléatoire des types de cases,
+        // et leurs startIdx/endIdx sont les INDEX RÉELS du tableau de cases.
+        const newLevelRanges = [
+            { startIdx: 1, endIdx: 15, level: 1, goBack: 1, undress: 2, action: 3, truthDare: 5, massage: 4, rolePlay: 0 },
+            { startIdx: 16, endIdx: 30, level: 2, goBack: 1, undress: 2, action: 3, truthDare: 4, massage: 3, rolePlay: 2 },
+            { startIdx: 32, endIdx: 46, level: 3, goBack: 1, undress: 2, action: 3, truthDare: 3, massage: 3, rolePlay: 3 },
+            { startIdx: 47, endIdx: 61, level: 4, goBack: 1, undress: 2, action: 3, truthDare: 3, massage: 3, rolePlay: 3 }
+        ];
+
+        // Initialisation du jeu au chargement complet du DOM
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log("[DOMContentLoaded] DOM entièrement chargé. Début de l'initialisation.");
+            try {
+                startScreen.style.display = 'flex';
+                gameScreen.style.display = 'none';
+                gagPopup.style.display = 'none';
+                victoryPopup.style.display = 'none';
+                debugControls.style.display = 'none';
+                adminPopup.style.display = 'none'; // S'assurer que la popup admin est cachée au démarrage
+
+                startGameButton.disabled = false;
+                adminModeButton.disabled = false; // Rendre le bouton admin actif au démarrage
+                loadingIndicator.style.display = 'none';
+
+                // Vérifier si les éléments existent avant d'appeler initializeEmojiOptions
+                if (maleEmojiOptionsDiv && femaleEmojiOptionsDiv) {
+                    initializeEmojiOptions(maleEmojiOptionsDiv, maleEmojis, 'male');
+                    initializeEmojiOptions(femaleEmojiOptionsDiv, femaleEmojis, 'female');
+                } else {
+                    console.error("[DOMContentLoaded] Erreur: Un ou plusieurs conteneurs d'emojis n'ont pas été trouvés dans le DOM.");
+                }
+
+                displayDiceFace(1);
+                updateTheme();
+                console.log("[DOMContentLoaded] Écran de démarrage prêt.");
+            } catch (e) {
+                console.error("[DOMContentLoaded] Erreur critique lors de l'initialisation du DOM:", e);
+                showMessage("Une erreur est survenue au démarrage. Veuillez recharger la page.");
+            }
+        });
+
+    </script>
+</body>
+</html>
