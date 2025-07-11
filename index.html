@@ -1118,22 +1118,55 @@
         import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // CONFIGURATION FIREBASE
-        const firebaseConfig = {
-            apiKey: "AIzaSyDXxfz5VdNiInngWzn3wtKVDJlBBz0272U",
-            authDomain: "jeuoiecoquin.firebaseapp.com",
-            projectId: "jeuoiecoquin",
-            storageBucket: "jeuoiecoquin.firebasestorage.app",
-            messagingSenderId: "642698244266",
-            appId: "1:642698244266:web:5c7a7e041b6be50bd7a0d3"
-        };
+        // Utilise les variables globales fournies par l'environnement Canvas si elles existent,
+        // sinon utilise la configuration en dur pour un usage local.
+        let firebaseConfig;
+        let appId;
 
-        const appId = firebaseConfig.projectId || 'default-app-id';
+        if (typeof __firebase_config !== 'undefined' && typeof __app_id !== 'undefined') {
+            firebaseConfig = JSON.parse(__firebase_config);
+            appId = __app_id;
+            console.log("[Firebase Config] Utilisation de la configuration Firebase fournie par Canvas.");
+        } else {
+            // Configuration par défaut pour un usage local ou hors Canvas
+            firebaseConfig = {
+                apiKey: "AIzaSyDXxfz5VdNiInngWzn3wtKVDJlBBz0272U",
+                authDomain: "jeuoiecoquin.firebaseapp.com",
+                projectId: "jeuoiecoquin",
+                storageBucket: "jeuoiecoquin.firebasestorage.app",
+                messagingSenderId: "642698244266",
+                appId: "1:642698244266:web:5c7a7e041b6be50bd7a0d3"
+            };
+            appId = firebaseConfig.projectId || 'default-app-id';
+            console.log("[Firebase Config] Utilisation de la configuration Firebase en dur.");
+        }
 
         console.log("[Firebase Config] Parsed firebaseConfig:", firebaseConfig);
         console.log("[Firebase Config] Using appId:", appId);
 
-        if (!firebaseConfig || Object.keys(firebaseConfig).length === 0 || !firebaseConfig.apiKey || firebaseConfig.apiKey === "VOTRE_API_KEY") {
-            console.error("[Firebase Config] Erreur: La configuration Firebase est manquante ou la clé API n'est pas définie. Si tu exécutes ce fichier localement, assure-toi d'avoir remplacé les valeurs par défaut dans 'firebaseConfig'.");
+        let app;
+        let auth;
+        let db;
+
+        // Vérifie si la configuration est valide avant d'initialiser Firebase
+        if (firebaseConfig && Object.keys(firebaseConfig).length > 0 && firebaseConfig.apiKey && firebaseConfig.apiKey !== "VOTRE_API_KEY") {
+            try {
+                app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+                console.log("[Firebase Init] Firebase initialisé avec succès.");
+            } catch (e) {
+                console.error("[Firebase Init] Erreur lors de l'initialisation de Firebase:", e);
+                document.addEventListener('DOMContentLoaded', () => {
+                    showMessage("Erreur critique d'initialisation Firebase. Le jeu ne pourra pas sauvegarder la progression.");
+                    const startGameButton = document.getElementById('start-game-button');
+                    const adminModeButton = document.getElementById('admin-mode-button');
+                    if (startGameButton) startGameButton.disabled = true;
+                    if (adminModeButton) adminModeButton.disabled = true;
+                });
+            }
+        } else {
+            console.warn("[Firebase Init] Firebase ne sera pas initialisé car la configuration est invalide ou manquante. La sauvegarde ne fonctionnera pas.");
             document.addEventListener('DOMContentLoaded', () => {
                 showMessage("Erreur de configuration Firebase: Clé API manquante ou incorrecte. Le jeu ne pourra pas sauvegarder la progression. Si tu es en local, mets à jour 'firebaseConfig' dans le code.");
                 const startGameButton = document.getElementById('start-game-button');
@@ -1141,17 +1174,6 @@
                 if (startGameButton) startGameButton.disabled = true;
                 if (adminModeButton) adminModeButton.disabled = true;
             });
-        }
-
-        let app;
-        let auth;
-        let db;
-        if (firebaseConfig && firebaseConfig.apiKey && firebaseConfig.apiKey !== "VOTRE_API_KEY") {
-            app = initializeApp(firebaseConfig);
-            auth = getAuth(app);
-            db = getFirestore(app);
-        } else {
-            console.warn("[Firebase Init] Firebase ne sera pas initialisé car la configuration est invalide ou manquante. La sauvegarde ne fonctionnera pas.");
         }
 
         // Variables globales pour Firebase
@@ -2075,6 +2097,7 @@
          * Charge les données des gages depuis Firestore et met en place un listener en temps réel.
          */
         async function loadGagesFromFirestore() {
+            // Vérifie si db est bien initialisé avant de tenter de l'utiliser
             if (!db) {
                 console.error("[loadGagesFromFirestore] Firebase Firestore n'est pas initialisé. Impossible de charger les gages.");
                 showMessage("Erreur: Firebase non initialisé. Impossible de charger les gages.");
@@ -2294,8 +2317,9 @@
 
         startGameButton.addEventListener('click', async () => {
             console.log("[startGameButton] Bouton 'Commencer le jeu !' cliqué.");
+            // Vérifie si Firebase est initialisé avant de continuer
             if (!app || !auth || !db) {
-                showMessage("Le jeu ne peut pas démarrer : Firebase n'est pas correctement configuré. Veuillez vérifier la console pour plus de détails et mettre à jour votre 'firebaseConfig' si tu es en local.");
+                showMessage("Le jeu ne peut pas démarrer : Firebase n'est pas correctement configuré. Veuillez vérifier la console pour plus de détails.");
                 return;
             }
 
@@ -2319,6 +2343,7 @@
 
                 try {
                     console.log("[startGameButton] Tentative d'authentification Firebase...");
+                    // Utilise signInAnonymously pour l'authentification
                     await signInAnonymously(auth);
 
                     userId = auth.currentUser.uid;
@@ -2326,11 +2351,6 @@
 
                     gameDocRef = doc(db, `artifacts/${appId}/users/${userId}/game_state/current_game`);
                     console.log("[startGameButton] Référence au document de jeu:", gameDocRef.path);
-
-                    // loadGagesFromFirestore est maintenant un onSnapshot, donc il est déjà actif
-                    // On attend juste que les gages soient chargés la première fois
-                    // Pour s'assurer que les gages sont bien là avant de continuer, on peut ajouter une petite attente ou un flag
-                    // Pour l'instant, on considère que onSnapshot a déjà peuplé les données.
 
                     const docSnap = await getDoc(gameDocRef);
                     if (docSnap.exists()) {
