@@ -1041,7 +1041,7 @@
         </div>
     </div>
 
-    <!-- Gage Form Popup (Add/Edit Gage) -->
+    <!-- Gage Form Popup (for Add/Edit) -->
     <div id="gage-form-popup">
         <div class="gage-form-content">
             <h2 id="gage-form-title">Ajouter un Gage</h2>
@@ -1141,8 +1141,8 @@
             console.log("[Firebase Config] Utilisation de la configuration Firebase en dur.");
         }
 
-        console.log("[Firebase Config] Parsed firebaseConfig:", firebaseConfig);
-        console.log("[Firebase Config] Using appId:", appId);
+        console.log("[Firebase Init] Parsed firebaseConfig:", firebaseConfig);
+        console.log("[Firebase Init] Using appId:", appId);
 
         let app;
         let auth;
@@ -1777,7 +1777,7 @@
             setTimeout(() => victoryPopup.style.display = 'none', 300);
             if (resolveVictoryPromise) {
                 resolveVictoryPromise();
-                resolveVictoryPromise = null;
+                resolveGagPromise = null; // Important: reset resolveGagPromise as well if it was used before victory
             }
         }
 
@@ -1848,6 +1848,8 @@
          * @returns {object} Le gage sélectionné.
          */
         function getGage(positionArrayIndex, caseType, stepsReceded = 0) {
+            console.log(`[getGage] Début de getGage pour caseType: ${caseType}, positionArrayIndex: ${positionArrayIndex}`);
+
             let selectedGage;
             const currentPlayerName = currentPlayer === 1 ? player1Name : player2Name;
             const otherPlayerName = currentPlayer === 1 ? player2Name : player1Name;
@@ -1855,6 +1857,10 @@
             let playerUnderwearCount = currentPlayer === 1 ? player1Underwear : player2Underwear;
 
             const visualPosition = getVisualCaseNumber(positionArrayIndex);
+
+            console.log(`[getGage] Noms des joueurs: Actuel: "${currentPlayerName}", Autre: "${otherPlayerName}"`);
+            console.log(`[getGage] Vêtements joueur actuel: ${playerClothesCount}, Sous-vêtements: ${playerUnderwearCount}`);
+
 
             if (caseType === 'final-gage') {
                 selectedGage = getRandomGage(finalGageData, visualPosition);
@@ -1864,11 +1870,12 @@
                 selectedGage = vestiaireGagesData.underwear;
             } else if (caseType === 'go-back') {
                 selectedGage = getRandomGage(goBackGagesData, visualPosition);
+                // Le remplacement de [steps] doit se faire avant le nettoyage général pour ne pas être affecté
                 selectedGage.text = selectedGage.text.replace(/\[steps\]/g, stepsReceded);
             } else if (caseType === 'sexual-position') {
                 selectedGage = getRandomGage(sexualPositionsGagesData, visualPosition);
             } else if (caseType === 'undress') {
-                const isUnderwearLevel = visualPosition >= 31;
+                const isUnderwearLevel = visualPosition >= 31; // Assumes level 3+ allows underwear removal
 
                 if (playerClothesCount > 0) {
                     selectedGage = getRandomGage(undressGagesData.filter(g => g.type === 'clothes'), visualPosition);
@@ -1877,7 +1884,8 @@
                     selectedGage = getRandomGage(undressGagesData.filter(g => g.type === 'underwear'), visualPosition);
                     if (currentPlayer === 1) player1Underwear--; else player2Underwear--;
                 } else {
-                    selectedGage = getRandomGage(actionGagesData, visualPosition);
+                    console.warn(`[getGage] Pas de vêtements/sous-vêtements à retirer pour le joueur actuel. Utilisation d'un gage d'action.`);
+                    selectedGage = getRandomGage(actionGagesData, visualPosition); // Fallback to action if no clothes/underwear
                 }
             } else if (caseType === 'action') {
                 selectedGage = getRandomGage(actionGagesData, visualPosition);
@@ -1890,17 +1898,42 @@
             } else if (caseType === 'surprise') {
                 selectedGage = getRandomGage(surpriseGagesData, visualPosition);
             } else {
-                console.warn("Type de case inconnu ou non géré. Retourne un gage par défaut.");
+                console.warn("[getGage] Type de case inconnu ou non géré. Retourne un gage par défaut.");
                 selectedGage = { title: "Défi Général !", text: "Un défi inattendu pour vous deux !", duration: "", accessories: [], imageUrl: "" };
             }
 
-            let finalGageText = selectedGage.text
-                .replace(/\[joueur\]/g, currentPlayerName)
-                .replace(/\[autreJoueur\]/g, otherPlayerName);
+            // Vérifie si selectedGage est valide avant de tenter d'accéder à .text
+            if (!selectedGage || !selectedGage.text) {
+                console.error("[getGage] Gage sélectionné invalide ou sans texte:", selectedGage);
+                return { title: "Erreur de Gage !", text: "Un problème est survenu lors du chargement du gage.", duration: "", accessories: [], imageUrl: "" };
+            }
+
+            console.log(`[getGage] Texte brut du gage avant traitement: "${selectedGage.text}"`);
+
+            let processedGageText = selectedGage.text;
+
+            // 1. Normaliser tous les types d'espaces (y compris insécables) en un seul espace standard
+            processedGageText = processedGageText.replace(/[\u00A0\u202F\s]+/g, ' ');
+
+            // 2. Insérer un espace avant/après les placeholders si de la ponctuation est collée
+            // Ceci assure que le remplacement exact peut se faire.
+            // Utilise une fonction de remplacement pour gérer les groupes de capture
+            processedGageText = processedGageText.replace(/(\[joueur\])([,.!?;:])/g, '$1 $2');
+            processedGageText = processedGageText.replace(/(\[autreJoueur\])([,.!?;:])/g, '$1 $2');
+
+            // 3. Effectuer le remplacement des placeholders par les noms des joueurs
+            // Utilise des expressions régulières pour une correspondance exacte des placeholders
+            processedGageText = processedGageText.replace(/\[joueur\]/g, currentPlayerName);
+            processedGageText = processedGageText.replace(/\[autreJoueur\]/g, otherPlayerName);
+
+            // 4. Nettoyer les éventuels doubles espaces ou espaces en début/fin de chaîne après remplacement
+            processedGageText = processedGageText.replace(/\s+/g, ' ').trim();
+
+            console.log(`[getGage] Texte du gage après traitement: "${processedGageText}"`);
 
             return {
                 title: selectedGage.title,
-                text: finalGageText,
+                text: processedGageText, // Utilise le texte nettoyé et remplacé
                 duration: selectedGage.duration,
                 accessories: selectedGage.accessories,
                 imageUrl: selectedGage.imageUrl
@@ -2153,9 +2186,10 @@
                     }
                 });
 
-                if (!gagesExist || !allGagesData['action']) { // Vérifie si au moins 'action' existe
+                if (!gagesExist || !allGagesData['action'] || allGagesData['action'].length === 0) { // Vérifie si au moins 'action' existe et n'est pas vide
                     console.warn("[loadGagesFromFirestore] Aucune donnée de gages trouvée ou incomplète dans Firestore. Initialisation des données par défaut...");
                     await initializeDefaultGagesInFirestore();
+                    console.log("[loadGagesFromFirestore] Gages par défaut initialisés et utilisés car Firestore était vide ou incomplet.");
                     // onSnapshot se déclenchera à nouveau après l'initialisation des défauts
                 } else {
                     console.log("[loadGagesFromFirestore] Gages chargés et mis à jour depuis Firestore avec succès !");
@@ -2166,6 +2200,10 @@
                 console.error("[onSnapshot] Erreur lors du chargement des gages depuis Firestore :", error);
                 showMessage("Impossible de charger les gages. Veuillez vérifier votre connexion ou les règles Firebase.");
                 loadingIndicator.style.display = 'none';
+                console.log("[loadGagesFromFirestore] Tentative d'utilisation des gages par défaut en raison de l'échec de Firestore.");
+                // Si onSnapshot échoue, on peut tenter d'initialiser les gages par défaut ici aussi
+                // pour s'assurer que le jeu est toujours jouable, même si la connexion est mauvaise.
+                // Cependant, le onSnapshot se réessaiera automatiquement, donc la logique actuelle est OK.
             });
         }
 
@@ -2261,11 +2299,11 @@
                     { level: 4, title: "Jeu de Rôle Torride 3", text: "Inventez ensemble un scénario coquin et incarnez-le pendant 5 minutes.", duration: "5min", accessories: [], imageUrl: "https://previews.123rf.com/images/wisky/wisky1409/wisky140900126/31530661-sexy-police-officers-isolated-on-white-background.jpg" }
                 ],
                 sexual_positions: [
-                    { title: "La Cuillère Coquine", text: "Allongez-vous en position de cuillère, mais avec un contact peau à peau maximal.", imageUrl: "https://sf1.doctissimo.fr/wp-content/uploads/doctissimo/2024/06/kamasutra-acrobatique-20-positions-spectaculaires-c09ac6e842b31429.jpeg", duration: "5min+", accessories: [] },
+                    { title: "La Cuillère Coquine", text: "Allongez-vous l'un contre l'autre, corps et âme, et laissez vos mains explorer chaque recoin de la peau de l'autre.", imageUrl: "https://sf1.doctissimo.fr/wp-content/uploads/doctissimo/2024/06/kamasutra-acrobatique-20-positions-spectaculaires-c09ac6e842b31429.jpeg", duration: "5min+", accessories: [] },
                     { title: "Le Baiser Papillon", text: "Face à face, vos corps collés, échangez des baisers doux et légers sur tout le visage et le cou.", imageUrl: "https://sf1.doctissimo.fr/wp-content/uploads/doctissimo/2024/06/kamasutra-acrobatique-20-positions-spectaculaires-c09ac6e842b31429.jpeg", duration: "3min", accessories: [] },
                     { title: "Le Nœud Amoureux", text: "Enlacez vos jambes et vos bras de manière à former un nœud, en vous serrant fort l'un contre l'autre.", imageUrl: "https://sf1.doctissimo.fr/wp-content/uploads/doctissimo/2024/06/kamasutra-acrobatique-20-positions-spectaculaires-c09ac6e842b31429.jpeg", duration: "2min", accessories: [] },
                     { title: "La Danse Lente Intime", text: "Dansez très lentement, corps contre corps, en vous murmurant des mots doux à l'oreille.", imageUrl: "https://sf1.doctissimo.fr/wp-content/uploads/doctissimo/2024/06/kamasutra-acrobatique-20-positions-spectaculaires-c09ac6e842b31429.jpeg", duration: "3min", accessories: [] },
-                    { title: "Le Regard Profond", text: "Asseyez-vous l'un en face de l'autre, genoux contre genoux, et regardez-vous intensément dans les yeux sans parler pendant 2 minutes.", imageUrl: "https://sf1.doctissimo.fr/wp-content/uploads/doctissimo/2024/06/kamasutra-acrobatique-20-positions-spectaculaires-c09ac6e842b31429.jpeg", duration: "2min", accessories: [] },
+                    { title: "Le Regard Profond", text: "Asseyez-vous l'un en face de l'autre, déshabillés, et plongez vos regards dans les yeux de l'autre, laissant le désir monter en silence.", imageUrl: "https://sf1.doctissimo.fr/wp-content/uploads/doctissimo/2024/06/kamasutra-acrobatique-20-positions-spectaculaires-c09ac6e842b31429.jpeg", duration: "2min", accessories: [] },
                     { title: "L'Étreinte Passionnée", text: "Serrez-vous dans les bras très fort, en vous balançant doucement, comme si vous ne vouliez plus jamais vous lâcher.", imageUrl: "https://sf1.doctissimo.fr/wp-content/uploads/doctissimo/2024/06/kamasutra-acrobatique-20-positions-spectaculaires-c09ac6e842b31429.jpeg", duration: "1min", accessories: [] },
                     { title: "Le Câlin Inversé", text: "Asseyez-vous l'un sur l'autre, dos à dos, et penchez-vous pour vous câliner par-dessus l'épaule.", imageUrl: "https://sf1.doctissimo.fr/wp-content/uploads/doctissimo/2024/06/kamasutra-acrobatique-20-positions-spectaculaires-c09ac6e842b31429.jpeg", duration: "2min", accessories: [] },
                     { title: "Le Baiser de l'Araignée", text: "Allongez-vous sur le dos, face à face, et essayez de vous embrasser en utilisant uniquement vos langues, sans bouger vos têtes.", imageUrl: "https://sf1.doctissimo.fr/wp-content/uploads/doctissimo/2024/06/kamasutra-acrobatique-20-positions-spectaculaires-c09ac6e842b31429.jpeg", duration: "1min", accessories: [] },
@@ -2273,7 +2311,7 @@
                 ],
                 final_gage: [
                     { title: "Le Triomphe des Amoureux !", text: "[joueur] a gagné ! Pour célébrer, [joueur] peut choisir n'importe quel gage (même un passé) pour [autreJoueur], qui doit l'exécuter avec passion !", duration: "À la discrétion du vainqueur", accessories: [], imageUrl: "https://pics.porn300.com/thumbs/4/9/d/1/d/49d1d9ede7c1d6f2edde98237892d4db6539482c.mp4/improved/23.jpg" },
-                    { title: "Le Baiser de la Victoire !", text: " [joueur] a gagné ! Les deux joueurs doivent échanger un baiser langoureux et infini, jusqu'à ce que l'un d'eux ne puisse plus respirer (presque) !", duration: "Jusqu'à l'épuisement", accessories: [], imageUrl: "https://pics.porn300.com/thumbs/4/9/d/1/d/49d1d9ede7c1d6f2edde98237892d4db6539482c.mp4/improved/23.jpg" },
+                    { title: "Le Baiser de la Victoire !", text: " [joueur] a gagné ! Les deux joueurs doivent s'embrasser passionnément et infini, jusqu'à ce que l'un d'eux ne puisse plus respirer (presque) !", duration: "Jusqu'à l'épuisement", accessories: [], imageUrl: "https://pics.porn300.com/thumbs/4/9/d/1/d/49d1d9ede7c1d6f2edde98237892d4db6539482c.mp4/improved/23.jpg" },
                     { title: "Nuit Blanche de Plaisir !", text: "[joueur] a gagné ! Les deux joueurs doivent se promettre une nuit entière de plaisirs et d'explorations mutuelles, sans limites !", duration: "Toute la nuit", accessories: [], imageUrl: "https://pics.porn300.com/thumbs/4/9/d/1/d/49d1d9ede7c1d6f2edde98237892d4db6539482c.mp4/improved/23.jpg" },
                     { title: "Le Déshabillage Suprême !", text: "[joueur] a gagné ! [autreJoueur] doit retirer le dernier vêtement ou sous-vêtement qu'il/elle porte, lentement et sensuellement, sous le regard de [joueur] !", duration: "1min", accessories: [], imageUrl: "https://pics.porn300.com/thumbs/4/9/d/1/d/49d1d9ede7c1d6f2edde98237892d4db6539482c.mp4/improved/23.jpg" }
                 ],
@@ -2323,15 +2361,17 @@
                 return;
             }
 
-            player1Name = player1NameInput.value.trim();
-            player2Name = player2NameInput.value.trim();
+            // Lire les noms des joueurs depuis les champs de saisie
+            let inputPlayer1Name = player1NameInput.value.trim();
+            let inputPlayer2Name = player2NameInput.value.trim();
+
             player1Clothes = parseInt(player1ClothesInput.value, 10);
             player1Underwear = parseInt(player1UnderwearInput.value, 10);
             player2Clothes = parseInt(player2ClothesInput.value, 10);
             player2Underwear = parseInt(player2UnderwearInput.value, 10);
 
 
-            if (player1Name && player2Name && !isNaN(player1Clothes) && !isNaN(player1Underwear) && !isNaN(player2Clothes) && !isNaN(player2Underwear)) {
+            if (inputPlayer1Name && inputPlayer2Name && !isNaN(player1Clothes) && !isNaN(player1Underwear) && !isNaN(player2Clothes) && !isNaN(player2Underwear)) {
                 if (player1Clothes < 0 || player1Underwear < 0 || player2Clothes < 0 || player2Underwear < 0) {
                     showMessage("Le nombre de vêtements et sous-vêtements ne peut pas être négatif.");
                     return;
@@ -2355,8 +2395,10 @@
                     const docSnap = await getDoc(gameDocRef);
                     if (docSnap.exists()) {
                         const savedState = docSnap.data();
-                        player1Name = savedState.player1Name;
-                        player2Name = savedState.player2Name;
+                        // Utilise les noms sauvegardés s'ils ne sont pas vides, sinon utilise les noms des inputs
+                        player1Name = savedState.player1Name || inputPlayer1Name;
+                        player2Name = savedState.player2Name || inputPlayer2Name;
+                        
                         player1Position = savedState.player1Position;
                         player2Position = savedState.player2Position;
                         player1Clothes = savedState.player1Clothes;
@@ -2370,6 +2412,9 @@
                         showMessage("Partie précédente chargée !");
                         console.log("[startGameButton] Partie précédente chargée:", savedState);
                     } else {
+                        // Nouvelle partie : utilise les noms des inputs
+                        player1Name = inputPlayer1Name;
+                        player2Name = inputPlayer2Name;
                         await setDoc(gameDocRef, {
                             player1Name,
                             player2Name,
@@ -2386,6 +2431,9 @@
                         showMessage("Nouvelle partie commencée et sauvegardée !");
                         console.log("[startGameButton] Nouvelle partie commencée et sauvegardée.");
                     }
+
+                    // Log pour confirmer les noms des joueurs après le chargement/sauvegarde
+                    console.log(`[startGameButton] Noms des joueurs après chargement/sauvegarde: Joueur1: "${player1Name}", Joueur2: "${player2Name}"`);
 
                     player1Token.textContent = selectedMaleEmoji;
                     player2Token.textContent = selectedFemaleEmoji;
